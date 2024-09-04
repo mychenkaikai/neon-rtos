@@ -1,0 +1,1970 @@
+
+File: target/thumbv7m-none-eabi/debug/neon
+Format: elf32-littlearm
+Arch: arm
+AddressSize: 32bit
+LoadName: <Not found>
+Symbols [
+  Symbol {
+    Name:  (0)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: Undefined (0x0)
+  }
+  Symbol {
+    Name: 21nqtxerbw8nvfq9w1tticfst (1)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: 3hhkasyzavb71d3t2bzbo4kt0 (27)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: 3pg1rkmjylhekjcdsrtoj37xr (53)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: 4niqnqv6kav4gto4gl7i7tu8k (79)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: 907cngpsgoilzcj0rsmds8fre (105)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: aj1a2avzrjrh3flbizqn7iv3f (131)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: $t.0 (157)
+    Value: 0x43C
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4neon18__cortex_m_rt_main17hd780adc9931f386cE (162)
+    Value: 0x445
+    Size: 22
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.1 (211)
+    Value: 0x444
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: axw3jjdryzpyy1rghawh9rxwg (216)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: ci6sks6worzrpfuiohq3b48om (242)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: eq7y0jbjs9a06o7x6l7zmcp17 (268)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: a5jkvvh3eukriyt5blacjbulq (294)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: alloc_cortex_m.eb598aca1c9d968d-cgu.0 (320)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: linked_list_allocator.3e1a5fbf79689164-cgu.0 (358)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: cortex_m_semihosting.793071d27dbc005f-cgu.0 (403)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: $t.3 (447)
+    Value: 0x45A
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.9 (452)
+    Value: 0x46E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3ops8function6FnOnce9call_once17hc1ba0df0d84b8f31E (457)
+    Value: 0x475
+    Size: 14
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.11 (516)
+    Value: 0x474
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.17 (522)
+    Value: 0x482
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.19 (528)
+    Value: 0x492
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.20 (534)
+    Value: 0x4B4
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.23 (540)
+    Value: 0x4DC
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting3hio7hstdout28_$u7b$$u7b$closure$u7d$$u7d$17h2b5fe68419d5a814E (546)
+    Value: 0x767
+    Size: 8
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.24 (634)
+    Value: 0x50A
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN71_$LT$cortex_m_semihosting..hio..HStdout$u20$as$u20$core..fmt..Write$GT$9write_str28_$u7b$$u7b$closure$u7d$$u7d$17h29cf0b69adf26ccaE (640)
+    Value: 0x747
+    Size: 6
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.25 (777)
+    Value: 0x53E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN77_$LT$cortex_m..register..primask..Primask$u20$as$u20$core..cmp..PartialEq$GT$2eq17hc9dad980667c105eE (783)
+    Value: 0x573
+    Size: 34
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.29 (889)
+    Value: 0x572
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.30 (895)
+    Value: 0x594
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN8cortex_m8register7primask4read17hc54bd88b497724ebE (901)
+    Value: 0x5BB
+    Size: 46
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.32 (956)
+    Value: 0x5BA
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN8cortex_m8register7primask7Primask9is_active17h55c2c4945b746922E (962)
+    Value: 0x5E9
+    Size: 28
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.33 (1030)
+    Value: 0x5E8
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_9 (1036)
+    Value: 0xE5C
+    Size: 1
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: _ZN8cortex_m9interrupt7disable17hbd8009d4be9742b4E (1050)
+    Value: 0x659
+    Size: 10
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN8cortex_m9interrupt6enable17h5c272dc2ddf15a84E (1101)
+    Value: 0x64F
+    Size: 10
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.35 (1151)
+    Value: 0x604
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting6export11hstdout_str28_$u7b$$u7b$closure$u7d$$u7d$17hd6418aecd8078db7E (1157)
+    Value: 0x677
+    Size: 158
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.38 (1253)
+    Value: 0x64E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.39 (1259)
+    Value: 0x658
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.42 (1265)
+    Value: 0x662
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.43 (1271)
+    Value: 0x676
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting6export7HSTDOUT17h450cb974727d0ad6E (1277)
+    Value: 0x20000000
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .bss (0x5)
+  }
+  Symbol {
+    Name: .L__unnamed_10 (1338)
+    Value: 0xEC4
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: .L__unnamed_11 (1353)
+    Value: 0xED4
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting3hio9write_all17h766207a38299b51fE (1368)
+    Value: 0x7DF
+    Size: 176
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.53 (1428)
+    Value: 0x714
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.54 (1434)
+    Value: 0x72A
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.55 (1440)
+    Value: 0x746
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting3hio4open17hc9ca33825e121ffeE (1446)
+    Value: 0x76F
+    Size: 112
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.58 (1501)
+    Value: 0x74C
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.59 (1507)
+    Value: 0x766
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.60 (1513)
+    Value: 0x76E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_19 (1519)
+    Value: 0xF48
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.61 (1534)
+    Value: 0x7DE
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_20 (1540)
+    Value: 0xF58
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t (1555)
+    Value: 0x88E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: cortex_m.b8b47f14c3b45cb9-cgu.0 (1558)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: .L__unnamed_3 (1590)
+    Value: 0xF94
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: .L__unnamed_6 (1604)
+    Value: 0xFF8
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.14 (1618)
+    Value: 0x892
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core5slice3raw14from_raw_parts18precondition_check17h9aab7ec86ce85c4fE (1624)
+    Value: 0x8B9
+    Size: 250
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.16 (1699)
+    Value: 0x8B8
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_8 (1705)
+    Value: 0x1068
+    Size: 162
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: .L__unnamed_9 (1719)
+    Value: 0x1058
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: lib.f2c86790-cgu.0 (1733)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: $t.3 (1752)
+    Value: 0x9B2
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.4 (1757)
+    Value: 0x9B6
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.12 (1762)
+    Value: 0x9BA
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: bare_metal.7b7db073a8fd216e-cgu.0 (1768)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: $t.0 (1802)
+    Value: 0x9C0
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: cortex_m_rt.e457f286a316f808-cgu.0 (1807)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: $t.0 (1842)
+    Value: 0x9C2
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core10intrinsics11write_bytes18precondition_check17h1a71f5b01e32e387E (1847)
+    Value: 0xA69
+    Size: 168
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.1 (1921)
+    Value: 0xA20
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.2 (1926)
+    Value: 0xA68
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_2 (1931)
+    Value: 0x1134
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: .L__unnamed_3 (1945)
+    Value: 0x113C
+    Size: 111
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: .L__unnamed_5 (1959)
+    Value: 0x11FC
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.7 (1973)
+    Value: 0xB10
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3ptr14write_volatile18precondition_check17h3483d5b3402be6c7E (1978)
+    Value: 0xB35
+    Size: 170
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.8 (2047)
+    Value: 0xB34
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_6 (2052)
+    Value: 0x120C
+    Size: 111
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.9 (2066)
+    Value: 0xBDE
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.10 (2071)
+    Value: 0xBE8
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core4sync6atomic14compiler_fence17h1ba3907dc0645187E (2077)
+    Value: 0xBF5
+    Size: 104
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.12 (2134)
+    Value: 0xBF4
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_7 (2140)
+    Value: 0x12B0
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $d.13 (2154)
+    Value: 0xC14
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.14 (2160)
+    Value: 0xC1A
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_8 (2166)
+    Value: 0x1308
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.17 (2180)
+    Value: 0x400
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.18 (2186)
+    Value: 0xE3A
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.19 (2192)
+    Value: 0xC5C
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.20 (2198)
+    Value: 0xC74
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t (2204)
+    Value: 0xE26
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: panic_halt.81077d07032f37a5-cgu.0 (2207)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: _ZN4core4sync6atomic14compiler_fence17he976a308d1e99b2fE (2241)
+    Value: 0xC79
+    Size: 104
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.0 (2298)
+    Value: 0xC78
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_1 (2303)
+    Value: 0x134C
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $d.1 (2317)
+    Value: 0xC98
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.2 (2322)
+    Value: 0xC9E
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .L__unnamed_3 (2327)
+    Value: 0x13A4
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.3 (2341)
+    Value: 0xCE0
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: alloc.9f29d8b48de5d420-cgu.0 (2346)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: core.39bbb48777cd52e1-cgu.0 (2375)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: .Lanon.1ae05ccb6850cac8d62481007f3f1b55.149 (2403)
+    Value: 0x13D8
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: _ZN36_$LT$T$u20$as$u20$core..any..Any$GT$7type_id17hac2286b94cea9751E (2447)
+    Value: 0xCFB
+    Size: 34
+    Binding: Local (0x0)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.54 (2517)
+    Value: 0xCFA
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.136 (2523)
+    Value: 0xD1C
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .Lanon.1ae05ccb6850cac8d62481007f3f1b55.250 (2530)
+    Value: 0x13E0
+    Size: 43
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.140 (2574)
+    Value: 0xD30
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .Lanon.1ae05ccb6850cac8d62481007f3f1b55.254 (2581)
+    Value: 0x140C
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.141 (2625)
+    Value: 0xD52
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.142 (2632)
+    Value: 0xD88
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.143 (2639)
+    Value: 0xDAE
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .Lanon.1ae05ccb6850cac8d62481007f3f1b55.256 (2646)
+    Value: 0x143C
+    Size: 16
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: $t.383 (2690)
+    Value: 0xDDA
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: $t.390 (2697)
+    Value: 0xE00
+    Size: 0
+    Binding: Local (0x0)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: .Lanon.1ae05ccb6850cac8d62481007f3f1b55.451 (2704)
+    Value: 0x1468
+    Size: 8
+    Binding: Local (0x0)
+    Type: Object (0x1)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.125 (2748)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.126 (2791)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.057 (2834)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.007 (2877)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.136 (2920)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.142 (2963)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.148 (3006)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.160 (3049)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.001 (3092)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.175 (3135)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.180 (3178)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.181 (3221)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.191 (3264)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.204 (3307)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.216 (3350)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.218 (3393)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.221 (3436)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.250 (3479)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.005 (3522)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.255 (3565)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.271 (3608)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.273 (3651)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.277 (3694)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.303 (3737)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.315 (3780)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.318 (3823)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.321 (3866)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.333 (3909)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.208 (3952)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: compiler_builtins.90369a15535666d0-cgu.011 (3995)
+    Value: 0x0
+    Size: 0
+    Binding: Local (0x0)
+    Type: File (0x4)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: __RESET_VECTOR (4038)
+    Value: 0x4
+    Size: 4
+    Binding: Global (0x1)
+    Type: Object (0x1)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: __EXCEPTIONS (4053)
+    Value: 0x8
+    Size: 56
+    Binding: Global (0x1)
+    Type: Object (0x1)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: DefaultHandler (4066)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: HardFaultTrampoline (4081)
+    Value: 0xE27
+    Size: 20
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __INTERRUPTS (4101)
+    Value: 0x40
+    Size: 960
+    Binding: Global (0x1)
+    Type: Object (0x1)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: main (4114)
+    Value: 0x43D
+    Size: 8
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: DefaultHandler_ (4119)
+    Value: 0xC5D
+    Size: 24
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: DefaultPreInit (4135)
+    Value: 0xC75
+    Size: 2
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: HardFault_ (4150)
+    Value: 0xE3B
+    Size: 26
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: Reset (4161)
+    Value: 0x401
+    Size: 60
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: rust_begin_unwind (4167)
+    Value: 0xCE1
+    Size: 26
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking14panic_nounwind17h23e181c35bbe0323E (4185)
+    Value: 0xDAF
+    Size: 44
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking9panic_fmt17h3b60833718ebee12E (4240)
+    Value: 0xD31
+    Size: 34
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting6export11hstdout_str17h7fbc6fc274544f74E (4289)
+    Value: 0x663
+    Size: 20
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __primask_r (4355)
+    Value: 0x9BB
+    Size: 6
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN10bare_metal15CriticalSection3new17h2d278914c68f5e93E (4367)
+    Value: 0x9C1
+    Size: 2
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __cpsie (4424)
+    Value: 0x9B7
+    Size: 4
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __cpsid (4432)
+    Value: 0x9B3
+    Size: 4
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking11panic_const24panic_const_sub_overflow17hd728e2e363004ba3E (4440)
+    Value: 0xDDB
+    Size: 38
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking5panic17ha388e71dafc66c80E (4518)
+    Value: 0xD89
+    Size: 38
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN153_$LT$core..result..Result$LT$T$C$F$GT$$u20$as$u20$core..ops..try_trait..FromResidual$LT$core..result..Result$LT$core..convert..Infallible$C$E$GT$$GT$$GT$13from_residual17hb168721e94c40c93E (4563)
+    Value: 0x45B
+    Size: 20
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN71_$LT$cortex_m_semihosting..hio..HStdout$u20$as$u20$core..fmt..Write$GT$9write_str17h724031de7aa38bbbE (4758)
+    Value: 0x72B
+    Size: 28
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3mem4drop17haeb621a82abe6e72E (4865)
+    Value: 0x46F
+    Size: 6
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core5slice29_$LT$impl$u20$$u5b$T$u5d$$GT$8is_empty17h5c1ee5255df3130fE (4903)
+    Value: 0x483
+    Size: 16
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6option15Option$LT$T$GT$6as_mut17hdf08673fa78d0952E (4978)
+    Value: 0x493
+    Size: 34
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6option15Option$LT$T$GT$7is_none17h4ae4978acfd08c14E (5038)
+    Value: 0x4B5
+    Size: 40
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6result19Result$LT$T$C$E$GT$3map17hb1626f71d0fd8375E (5099)
+    Value: 0x4DD
+    Size: 46
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6result19Result$LT$T$C$E$GT$7map_err17h9b6e681d627e30bbE (5160)
+    Value: 0x50B
+    Size: 52
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6result19Result$LT$T$C$E$GT$7map_err17h9deb6c8f1f110e79E (5225)
+    Value: 0x53F
+    Size: 52
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN79_$LT$core..result..Result$LT$T$C$E$GT$$u20$as$u20$core..ops..try_trait..Try$GT$6branch17h3ac80a9d487599d5E (5290)
+    Value: 0x595
+    Size: 38
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN8cortex_m9interrupt4free17hd8d4f58e7f7964caE (5402)
+    Value: 0x605
+    Size: 74
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __c_m_sh_syscall (5450)
+    Value: 0x88F
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core6option13unwrap_failed17h7e72442f2b65ce9dE (5467)
+    Value: 0xD1D
+    Size: 20
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting3hio7hstdout17h73992b2be74df8faE (5518)
+    Value: 0x74D
+    Size: 26
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN20cortex_m_semihosting3hio7HStdout9write_all17h995d0b9cb0e45296E (5576)
+    Value: 0x715
+    Size: 22
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core5slice3raw14from_raw_parts17h8ccb9b81ae371c37E (5644)
+    Value: 0x893
+    Size: 38
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking11panic_const23panic_const_div_by_zero17h8375a28cc14d92fbE (5699)
+    Value: 0xE01
+    Size: 38
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN2r08zero_bss17he0afb585a37f5c9dE (5776)
+    Value: 0x9C3
+    Size: 94
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3ptr14write_volatile17h9ad88515a8ceb26cE (5812)
+    Value: 0xB11
+    Size: 36
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN2r09init_data17h4f3ac6e9fb942daaE (5861)
+    Value: 0xA21
+    Size: 72
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3ptr4read17hb377165af14ce73aE (5898)
+    Value: 0xBDF
+    Size: 10
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core3ptr5write17h414683ed45d6dc94E (5936)
+    Value: 0xBE9
+    Size: 12
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __pre_init (5975)
+    Value: 0xC75
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __sbss (5986)
+    Value: 0x20000000
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .bss (0x5)
+  }
+  Symbol {
+    Name: __ebss (5993)
+    Value: 0x20000008
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .bss (0x5)
+  }
+  Symbol {
+    Name: __sdata (6000)
+    Value: 0x20000000
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .data (0x4)
+  }
+  Symbol {
+    Name: __edata (6008)
+    Value: 0x20000000
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .data (0x4)
+  }
+  Symbol {
+    Name: __sidata (6016)
+    Value: 0x1470
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: NonMaskableInt (6025)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: MemoryManagement (6040)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: BusFault (6057)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: UsageFault (6066)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: SVCall (6077)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: DebugMonitor (6084)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: PendSV (6097)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: SysTick (6104)
+    Value: 0xC5D
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: HardFault (6112)
+    Value: 0xE3B
+    Size: 0
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _ZN4core9panicking18panic_nounwind_fmt17h80095ba9ba940304E (6122)
+    Value: 0xD53
+    Size: 54
+    Binding: Global (0x1)
+    Type: Function (0x2)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: _stack_start (6181)
+    Value: 0x20010000
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: Absolute (0xFFF1)
+  }
+  Symbol {
+    Name: _stext (6194)
+    Value: 0x400
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: __etext (6201)
+    Value: 0xE54
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .text (0x2)
+  }
+  Symbol {
+    Name: __sheap (6209)
+    Value: 0x20000008
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .uninit (0x6)
+  }
+  Symbol {
+    Name: __reset_vector (6217)
+    Value: 0x8
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: __eexceptions (6232)
+    Value: 0x40
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .vector_table (0x1)
+  }
+  Symbol {
+    Name: __erodata (6246)
+    Value: 0x1470
+    Size: 0
+    Binding: Global (0x1)
+    Type: None (0x0)
+    Other: 0
+    Section: .rodata (0x3)
+  }
+]
