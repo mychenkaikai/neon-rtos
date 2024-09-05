@@ -8,6 +8,7 @@ use alloc::alloc::*;
 use core::mem;
 use cortex_m_semihosting::hprintln;
 
+#[allow(dead_code)]
 struct ListNode {
     next: Option<usize>,
     prev: Option<usize>,
@@ -72,8 +73,6 @@ pub fn create_task(
         return Err("memory.is_null");
     }
 
-    let memory_slice = unsafe { core::slice::from_raw_parts_mut(memory, size) };
-
     // disable_interrupts();
     unsafe {
         let mut top_of_stack = memory as usize + (size - 1);
@@ -93,7 +92,8 @@ pub fn create_task(
             memory as usize,
             tcb.top_of_stack,
             memory as usize + (size - 1)
-        );
+        )
+        .unwrap();
 
         TASK_VEC.push(tcb);
 

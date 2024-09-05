@@ -12,7 +12,6 @@ extern crate alloc;
 use alloc::string::ToString;
 use alloc_cortex_m::CortexMHeap;
 use core::panic::PanicInfo;
-use cortex_m::peripheral::*;
 
 #[panic_handler]
 fn panic_halt(p: &PanicInfo) -> ! {
@@ -36,10 +35,8 @@ pub fn init_heap() {
     }
 }
 
-use core::ptr;
-
 #[exception]
-unsafe fn DefaultHandler(val: i16) -> ! {
+unsafe fn DefaultHandler(_val: i16) -> ! {
     hprintln!("DefaultHandler ").unwrap();
 
     loop {}
