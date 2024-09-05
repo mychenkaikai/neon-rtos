@@ -1,8 +1,4 @@
-// 导入内联汇编宏
-// extern crate cortex_m;
-// use cortex_m::asm;
 use core::arch::{asm, global_asm};
-use cortex_m_semihosting::{debug, hprintln};
 /// 启动第一个任务
 pub unsafe fn vPortStartFirstTask() {
     // 使用 NVIC 偏移寄存器定位栈
@@ -30,38 +26,32 @@ pub unsafe fn vPortStartFirstTask() {
         svc 0"
     );
 }
-//            "ldr r3, =tmp",
+
 pub extern "C" fn vPortSVCHandler() {
     unsafe {
-        let tmp = crate::task::TASK_VEC[crate::task::CURRENT_TASK.unwrap()].top_of_stack;
-        let mut var:usize;
-        // asm!(
-        //     ".align 4",
-        //     "ldr r0, [r1]",
-        //     in("r1") tmp,
-        //     lateout("r0") var
-        // );
-        // hprintln!("var:{:x}",var);
+
+        let tmp = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+
         asm!(
             ".align 4",
-            "ldmia r0!, {{r4-r11}}",          // Pop the core registers
-            in("r0") tmp,
-            lateout("r0") var,
-            // options(nostack)
+            "ldr r1, [r3]",
+            "ldr r0, [r1]",
+            in("r3") tmp,
         );
-        // hprintln!("var:{:x}",var);
+        asm!(
+            "ldmia r0!, {{r4-r11}}",          // Pop the core registers
+        );
+
         asm!(
             "msr psp, r0",        // Pop the core registers
-            "mrs r0, psp", 
-            lateout("r0") var
         );
-        // hprintln!("var:{:x}",var);
-        asm!(        // Pop the core registers
+
+        asm!(
+            // Pop the core registers
             "isb",
             "mov r0, #0",
             "msr basepri, r0",
             "orr lr, #0xd",
-
         );
         asm!(        // Pop the core registers
             "bx lr",
@@ -70,8 +60,50 @@ pub extern "C" fn vPortSVCHandler() {
     }
 }
 
-global_asm!(include_str!("port.s"));
+// global_asm!(include_str!("port.s"));
 
-extern "C"{
-    pub fn vPortPenSVHandler();
-} 
+// extern "C"{
+//     pub fn vPortPenSVHandler();
+
+use crate::task::*;
+use cortex_m_semihosting::hprintln;
+
+use crate::{task::task_switch_context, TCB};
+
+pub extern "C" fn vPortPenSVHandler() {
+    unsafe {
+        let tmp = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+
+        asm!("mrs r0, psp",
+            "isb",
+            "ldr r2, [r3]",
+            "stmdb r0!, {{r4-r11}}",
+            "str r0, [r2]",
+            in("r3") tmp,
+        );
+        asm!(
+            "stmdb sp!, {{r3, r14}}",
+            /* configMAX_SYSCALL_INTERRUPT_PRIORITY*/
+        );
+        asm!(
+            "mov r0, #0",
+            "msr basepri, r0",
+            "dsb",
+            "isb",
+            "bl task_switch_context",
+        );
+
+        asm!("mov r0, #0", "msr basepri, r0", "ldmia sp!, {{r3, r14}}",);
+
+        let tmp1 = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+        asm!("ldr r1, [r3]", "ldr r0, [r1]",in("r3") tmp1);
+        asm!("ldmia r0!, {{r4-r11}}",);
+
+        asm!("msr psp, r0", "isb",);
+
+        asm!(        // Pop the core registers
+            "bx lr",
+            in("lr") 0xFFFFFFFD as usize
+        );
+    }
+}

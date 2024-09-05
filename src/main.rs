@@ -4,13 +4,11 @@
 mod common;
 use crate::common::*;
 mod interrupts;
-mod lock;
 mod port;
 mod task;
 use crate::port::*;
 use crate::task::*;
 extern crate alloc;
-use alloc::string::String;
 use alloc::string::ToString;
 use alloc_cortex_m::CortexMHeap;
 use core::panic::PanicInfo;
@@ -38,7 +36,6 @@ pub fn init_heap() {
     }
 }
 
-use core::arch::asm;
 use core::ptr;
 
 #[exception]
@@ -50,13 +47,13 @@ unsafe fn DefaultHandler(val: i16) -> ! {
 }
 #[exception]
 fn SVCall() {
-    hprintln!("SVCall ");
+    // hprintln!("SVCall ");
     vPortSVCHandler();
 }
 
 #[exception]
 fn PendSV() {
-    hprintln!("PendSV ");
+    // hprintln!("PendSV ");
 
     unsafe {
         vPortPenSVHandler();
@@ -71,25 +68,27 @@ fn test1(arg: usize) {
     }
 }
 fn test2(arg: usize) {
+    unsafe {
+        let a = &TASK_VEC[0];
+        let b = &TASK_VEC[1];
+        let c = 1;
+    }
     loop {
         hprintln!("456");
         taks_yeild();
     }
 }
 
-#[link_section = ".data"]
-static bb: i32 = 1;
+// #[link_section = ".data"]
+// static bb: i32 = 1;
 #[entry]
 fn main() -> ! {
     let cc = 123;
     init_heap();
-    // xTaskCreateStatic();
-    // hprintln!("{}", create_task());
 
     create_task(test1, "123".to_string(), 500, 0);
     create_task(test2, "456".to_string(), 500, 0);
 
-    hprintln!("{}", "1233");
     scheduler();
 
     unsafe {
