@@ -1,6 +1,3 @@
-#![no_std]
-#![feature(asm)]
-
 extern crate cortex_m;
 use cortex_m::interrupt;
 // use core::arch::asm;

@@ -16,7 +16,7 @@ use cortex_m::peripheral::*;
 
 #[panic_handler]
 fn panic_halt(p: &PanicInfo) -> ! {
-    hprintln!("{}", p);
+    hprintln!("{}", p).unwrap();
     loop {}
 }
 
@@ -40,41 +40,34 @@ use core::ptr;
 
 #[exception]
 unsafe fn DefaultHandler(val: i16) -> ! {
-    let icsr = ptr::read_volatile(SCB::ptr() as *mut u32);
-    hprintln!("DefaultHandler {} {}", val, (icsr >> 10) & 0x1FF);
+    hprintln!("DefaultHandler ").unwrap();
 
     loop {}
 }
 #[exception]
 fn SVCall() {
     // hprintln!("SVCall ");
-    vPortSVCHandler();
+    v_port_svc_handler();
 }
 
 #[exception]
 fn PendSV() {
     // hprintln!("PendSV ");
 
-    unsafe {
-        vPortPenSVHandler();
-    }
+    v_port_pensv_handler();
+
     loop {}
 }
 
-fn test1(arg: usize) {
+fn test1(_arg: usize) {
     loop {
-        hprintln!("123");
+        hprintln!("123").unwrap();
         taks_yeild();
     }
 }
-fn test2(arg: usize) {
-    unsafe {
-        let a = &TASK_VEC[0];
-        let b = &TASK_VEC[1];
-        let c = 1;
-    }
+fn test2(_arg: usize) {
     loop {
-        hprintln!("456");
+        hprintln!("456").unwrap();
         taks_yeild();
     }
 }
@@ -83,16 +76,15 @@ fn test2(arg: usize) {
 // static bb: i32 = 1;
 #[entry]
 fn main() -> ! {
-    let cc = 123;
     init_heap();
 
-    create_task(test1, "123".to_string(), 500, 0);
-    create_task(test2, "456".to_string(), 500, 0);
+    create_task(test1, "123".to_string(), 500, 0).unwrap();
+    create_task(test2, "456".to_string(), 500, 0).unwrap();
 
     scheduler();
 
     unsafe {
-        vPortStartFirstTask();
+        v_port_start_first_task();
     }
     loop {}
 }

@@ -1,6 +1,5 @@
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::f32::consts;
 use core::usize;
 
 use core::result::Result;
@@ -26,7 +25,7 @@ pub struct TCB {
 }
 
 fn task_exit_error() {
-    hprintln!("task_exit_error");
+    hprintln!("task_exit_error").unwrap();
     loop {}
 }
 
@@ -59,8 +58,7 @@ static mut TASK_READY_LIST: ListNode = ListNode {
 
 pub static mut TASK_VEC: Vec<TCB> = Vec::new();
 
-pub static mut CURRENT_TASK: Option<usize> = None;
-pub static mut CURRENT_TASK2: Option<*const TCB> = None;
+pub static mut CURRENT_TASK: Option<*const TCB> = None;
 pub fn create_task(
     func: fn(usize),
     task_name: String,
@@ -109,7 +107,6 @@ pub fn create_task(
         TASK_VEC[new_item_id].prev = None;
 
         TASK_READY_LIST.next = Some(new_item_id);
-
     }
     // enable_interrupts();
     Ok(())
@@ -123,38 +120,38 @@ pub fn create_task(
 
 pub fn scheduler() {
     unsafe {
-        if let None = CURRENT_TASK2 {
+        if let None = CURRENT_TASK {
             if let Some(item) = TASK_READY_LIST.next {
-                CURRENT_TASK2 = Some(&TASK_VEC[item]);
+                CURRENT_TASK = Some(&TASK_VEC[item]);
             }
         }
         hprintln!(
             "now task is {} name is {}",
-            CURRENT_TASK2.unwrap() as usize,
-            (*(CURRENT_TASK2.unwrap())).name
-        );
-        hprintln!("total task is {}", TASK_VEC.len());
+            CURRENT_TASK.unwrap() as usize,
+            (*(CURRENT_TASK.unwrap())).name
+        )
+        .unwrap();
+        hprintln!("total task is {}", TASK_VEC.len()).unwrap();
         hprintln!(
             "CURRENT_TASK addr = {:x}",
-            (&(CURRENT_TASK2.unwrap())) as *const *const TCB as usize
-        );
+            (&(CURRENT_TASK.unwrap())) as *const *const TCB as usize
+        )
+        .unwrap();
     }
 }
 #[no_mangle]
 pub fn task_switch_context() {
     unsafe {
-        let a = &TASK_VEC[0];
-        let b = &TASK_VEC[1];
-        hprintln!("old {:x}", (*CURRENT_TASK2.unwrap()).top_of_stack);
-        if let Some(mut id) = CURRENT_TASK2 {
+        hprintln!("old {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
+        if let Some(mut id) = CURRENT_TASK {
             if id == &TASK_VEC[0] {
                 id = &TASK_VEC[1];
             } else {
                 id = &TASK_VEC[0];
             }
-            CURRENT_TASK2 = Some(id);
+            CURRENT_TASK = Some(id);
         }
 
-        hprintln!("switch {:x}", (*CURRENT_TASK2.unwrap()).top_of_stack);
+        hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
     }
 }

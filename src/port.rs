@@ -1,6 +1,6 @@
-use core::arch::{asm, global_asm};
+use core::arch::asm;
 /// 启动第一个任务
-pub unsafe fn vPortStartFirstTask() {
+pub unsafe fn v_port_start_first_task() {
     // 使用 NVIC 偏移寄存器定位栈
     let mut r0: u32;
     asm!(
@@ -27,10 +27,10 @@ pub unsafe fn vPortStartFirstTask() {
     );
 }
 
-pub extern "C" fn vPortSVCHandler() {
+pub extern "C" fn v_port_svc_handler() {
     unsafe {
 
-        let tmp = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+        let tmp = &(crate::task::CURRENT_TASK.unwrap()) as *const *const TCB;
 
         asm!(
             ".align 4",
@@ -65,14 +65,11 @@ pub extern "C" fn vPortSVCHandler() {
 // extern "C"{
 //     pub fn vPortPenSVHandler();
 
-use crate::task::*;
-use cortex_m_semihosting::hprintln;
+use crate::TCB;
 
-use crate::{task::task_switch_context, TCB};
-
-pub extern "C" fn vPortPenSVHandler() {
+pub extern "C" fn v_port_pensv_handler() {
     unsafe {
-        let tmp = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+        let tmp = &(crate::task::CURRENT_TASK.unwrap()) as *const *const TCB;
 
         asm!("mrs r0, psp",
             "isb",
@@ -95,7 +92,7 @@ pub extern "C" fn vPortPenSVHandler() {
 
         asm!("mov r0, #0", "msr basepri, r0", "ldmia sp!, {{r3, r14}}",);
 
-        let tmp1 = &(crate::task::CURRENT_TASK2.unwrap()) as *const *const TCB;
+        let tmp1 = &(crate::task::CURRENT_TASK.unwrap()) as *const *const TCB;
         asm!("ldr r1, [r3]", "ldr r0, [r1]",in("r3") tmp1);
         asm!("ldmia r0!, {{r4-r11}}",);
 
