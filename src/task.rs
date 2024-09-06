@@ -1,5 +1,6 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::ptr::addr_of;
 use core::usize;
 
 use core::result::Result;
@@ -46,10 +47,23 @@ fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
     ()
 }
 
-pub fn taks_yeild() {
-    cortex_m::peripheral::SCB::set_pendsv();
-    cortex_m::asm::dsb();
-    cortex_m::asm::isb();
+// pub const SCB_ICSR_PENDSVSET: u32 = 1 << 28;
+#[macro_export]
+macro_rules! taks_yeild {
+    () => {
+        cortex_m::peripheral::SCB::set_pendsv();
+        cortex_m::asm::dsb();
+        cortex_m::asm::isb();
+        // unsafe {
+
+        //     *(0xE000_ED04 as *mut u32) =  SCB_ICSR_PENDSVSET;
+
+        //     asm! {
+        //         "dsb",
+        //         "isb",
+        //     };
+        // }
+    };
 }
 
 static mut TASK_READY_LIST: ListNode = ListNode {
@@ -59,6 +73,7 @@ static mut TASK_READY_LIST: ListNode = ListNode {
 
 pub static mut TASK_VEC: Vec<TCB> = Vec::new();
 
+#[no_mangle]
 pub static mut CURRENT_TASK: Option<*const TCB> = None;
 pub fn create_task(
     func: fn(usize),
@@ -118,7 +133,10 @@ pub fn create_task(
     // }
 }
 
+fn idle_task(_arg: usize) {}
+
 pub fn scheduler() {
+    create_task(idle_task, "idle".to_string(), 100, 0).unwrap();
     unsafe {
         if let None = CURRENT_TASK {
             if let Some(item) = TASK_READY_LIST.next {
@@ -134,7 +152,7 @@ pub fn scheduler() {
         hprintln!("total task is {}", TASK_VEC.len()).unwrap();
         hprintln!(
             "CURRENT_TASK addr = {:x}",
-            (&(CURRENT_TASK.unwrap())) as *const *const TCB as usize
+            (addr_of!(CURRENT_TASK)) as *const Option<*const TCB> as usize
         )
         .unwrap();
     }

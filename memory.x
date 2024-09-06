@@ -1,3 +1,5 @@
+PROVIDE(PendSV = port_pendsv_handler);
+PROVIDE(SVCall = port_svc_handler);
 MEMORY
 {
   /* NOTE 1 K = 1 KiBi = 1024 bytes */

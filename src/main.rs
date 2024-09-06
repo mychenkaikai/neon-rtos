@@ -22,7 +22,6 @@ fn panic_halt(p: &PanicInfo) -> ! {
 #[exception]
 fn HardFault(ef: &ExceptionFrame) -> ! {
     hprintln!("{:#?}", ef).ok();
-
     loop {}
 }
 
@@ -38,34 +37,28 @@ pub fn init_heap() {
 #[exception]
 unsafe fn DefaultHandler(_val: i16) -> ! {
     hprintln!("DefaultHandler ").unwrap();
-
-    loop {}
-}
-#[exception]
-fn SVCall() {
-    // hprintln!("SVCall ");
-    v_port_svc_handler();
-}
-
-#[exception]
-fn PendSV() {
-    // hprintln!("PendSV ");
-
-    v_port_pensv_handler();
-
     loop {}
 }
 
 fn test1(_arg: usize) {
     loop {
+        taks_yeild!();
         hprintln!("123").unwrap();
-        taks_yeild();
+
+        let mut _a = 0;
+        for _ in 0..10000000 {
+            _a += 1;
+        }
     }
 }
 fn test2(_arg: usize) {
     loop {
+        taks_yeild!();
         hprintln!("456").unwrap();
-        taks_yeild();
+        let mut _a = 0;
+        for _ in 0..10000000 {
+            _a += 1;
+        }
     }
 }
 
