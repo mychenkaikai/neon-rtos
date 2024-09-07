@@ -9,10 +9,9 @@ mod task;
 use crate::port::*;
 use crate::task::*;
 extern crate alloc;
-use alloc::string::ToString;
 use alloc_cortex_m::CortexMHeap;
 use core::panic::PanicInfo;
-
+use crate::interrupts::*;
 #[panic_handler]
 fn panic_halt(p: &PanicInfo) -> ! {
     hprintln!("{}", p).unwrap();
@@ -40,27 +39,38 @@ unsafe fn DefaultHandler(_val: i16) -> ! {
     loop {}
 }
 
+#[exception]
+unsafe fn SysTick() {
+    disable_interrupts();
+    // hprintln!("SysTick ").unwrap();
+    // loop {}
+    systick_task_inc();
+    enable_interrupts();
+}
+
 fn test1(_arg: usize) {
     loop {
-        taks_yeild!();
-        hprintln!("123").unwrap();
-
-        let mut _a = 0;
-        for _ in 0..10000000 {
-            _a += 1;
-        }
+        hprintln!("task1").unwrap();
+        task_delay(1000);
     }
 }
 fn test2(_arg: usize) {
     loop {
-        taks_yeild!();
-        hprintln!("456").unwrap();
+        hprintln!("task2").unwrap();
         let mut _a = 0;
         for _ in 0..10000000 {
             _a += 1;
         }
+        taks_yeild!();
     }
 }
+use cortex_m::peripheral::syst::SystClkSource;
+use cortex_m::Peripherals;
+// 定义 SysTick 的频率（假设为 1 kHz）
+const SYST_FREQ: u32 = 100;
+const SYS_CLOCK: u32 = 12_000_000;
+// 定义 SysTick 的重新加载值
+const SYST_RELOAD: u32 = SYS_CLOCK / SYST_FREQ;
 
 // #[link_section = ".data"]
 // static bb: i32 = 1;
@@ -68,10 +78,18 @@ fn test2(_arg: usize) {
 fn main() -> ! {
     init_heap();
 
-    create_task(test1, "123".to_string(), 500, 0).unwrap();
-    create_task(test2, "456".to_string(), 500, 0).unwrap();
+    create_task(test1, "task1", 500, 0).unwrap();
+    create_task(test2, "task2", 500, 0).unwrap();
 
     scheduler();
+    let p = Peripherals::take().unwrap();
+    let mut syst = p.SYST;
+
+    // configures the system timer to trigger a SysTick exception every second
+    syst.set_clock_source(SystClkSource::Core);
+    syst.set_reload(SYST_RELOAD); // period = 1s
+    syst.enable_counter();
+    syst.enable_interrupt();
 
     unsafe {
         v_port_start_first_task();

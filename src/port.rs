@@ -43,18 +43,16 @@ fn port_svc_handler() {
 #[no_mangle]
 fn port_pendsv_handler() {
     unsafe {
-        {
-            asm!("add  sp, #16");
+        asm!("add  sp, #16");
 
-            asm!(
-                "mrs r0, psp",
-                "isb",
-                "ldr r2, [r3]",
-                "stmdb r0!, {{r4-r11}}",
-                "str r0, [r2]",
-                in("r3") addr_of!(CURRENT_TASK) as usize + 4,
-            );
-        }
+        asm!(
+            "mrs r0, psp",
+            "isb",
+            "ldr r2, [r3]",
+            "stmdb r0!, {{r4-r11}}",
+            "str r0, [r2]",
+            in("r3") addr_of!(CURRENT_TASK) as usize + 4,
+        );
 
         asm!(
             "stmdb sp!, {{r3, r14}}",
@@ -69,12 +67,11 @@ fn port_pendsv_handler() {
             "ldmia sp!, {{r3, r14}}",
         );
 
-        {
-            asm!("ldr r1, [r3]",
-            "ldr r0, [r1]",
-            in("r3") addr_of!(CURRENT_TASK) as usize + 4,
-            );
-        }
+        asm!("ldr r1, [r3]",
+        "ldr r0, [r1]",
+        in("r3") addr_of!(CURRENT_TASK) as usize + 4,
+        );
+
         asm!("ldmia r0!, {{r4-r11}}", "msr psp, r0", "isb",);
 
         asm!(        // Pop the core registers

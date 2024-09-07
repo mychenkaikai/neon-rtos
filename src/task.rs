@@ -1,14 +1,15 @@
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::borrow::BorrowMut;
 use core::ptr::addr_of;
 use core::usize;
 
 use core::result::Result;
 
+use crate::alloc::string::ToString;
 use alloc::alloc::*;
 use core::mem;
 use cortex_m_semihosting::hprintln;
-
 #[allow(dead_code)]
 struct ListNode {
     next: Option<usize>,
@@ -19,11 +20,12 @@ struct ListNode {
 pub struct TCB {
     pub top_of_stack: usize,
     pub stack_addr: usize,
-    name: String,
+    name: &'static str,
     stack_size: usize,
     // node: ListNode,
     next: Option<usize>,
     prev: Option<usize>,
+    tick_to_delay: usize,
 }
 
 fn task_exit_error() {
@@ -77,7 +79,7 @@ pub static mut TASK_VEC: Vec<TCB> = Vec::new();
 pub static mut CURRENT_TASK: Option<*const TCB> = None;
 pub fn create_task(
     func: fn(usize),
-    task_name: String,
+    task_name: &'static str,
     size: usize,
     arg: usize,
 ) -> Result<(), &'static str> {
@@ -99,6 +101,7 @@ pub fn create_task(
             stack_size: size,
             prev: None,
             next: None,
+            tick_to_delay: 0,
         };
 
         init_task_stack(&mut tcb.top_of_stack, func, arg);
@@ -133,18 +136,81 @@ pub fn create_task(
     // }
 }
 
-fn idle_task(_arg: usize) {}
+pub fn create_static_task(
+    func: fn(usize),
+    task_name: &'static str,
+    arg: usize,
+    stack_addr: usize,
+    size: usize,
+    tcb: &mut TCB,
+) -> Result<(), &'static str> {
+    // disable_interrupts();
 
+    let mut top_of_stack = stack_addr as usize + (size - 1);
+    top_of_stack = top_of_stack & (!(0x0007));
+    {
+        tcb.top_of_stack = top_of_stack;
+        tcb.stack_addr = stack_addr as usize;
+        tcb.name = task_name;
+        tcb.stack_size = size;
+        tcb.prev = None;
+        tcb.next = None;
+        tcb.tick_to_delay = 0;
+    };
+
+    init_task_stack(&mut tcb.top_of_stack, func, arg);
+    hprintln!(
+        "task: start{:x} top{:x} top{:x} ",
+        stack_addr as usize,
+        tcb.top_of_stack,
+        stack_addr as usize + (size - 1)
+    )
+    .unwrap();
+
+    // enable_interrupts();
+    Ok(())
+    // 使用 `memory` 进行读写操作...
+
+    // 使用完后释放内存
+    // unsafe {
+    //     dealloc(memory, layout);
+    // }
+}
+
+fn idle_task(_arg: usize) {
+    loop {
+        cortex_m::asm::wfi();
+    }
+}
+static mut IDLE_TASK_STACK: [u8; 500] = [0; 500];
+static mut IDLE_TASK_TCB: TCB = TCB {
+    top_of_stack: 0,
+    stack_addr: 0,
+    name: "idle",
+    stack_size: 0,
+    prev: None,
+    next: None,
+    tick_to_delay: 0,
+};
 pub fn scheduler() {
-    create_task(idle_task, "idle".to_string(), 100, 0).unwrap();
     unsafe {
+        create_static_task(
+            idle_task,
+            "idle",
+            0,
+            addr_of!(IDLE_TASK_STACK) as usize,
+            500,
+            &mut IDLE_TASK_TCB,
+        )
+        .unwrap();
+
         if let None = CURRENT_TASK {
-            if let Some(item) = TASK_READY_LIST.next {
+            TASK_READY_LIST.next.map(|item| {
                 CURRENT_TASK = Some(&TASK_VEC[item]);
-            }
+            });
         }
         hprintln!(
-            "now task is {} name is {}",
+            "now task is {:x} name is {}",
             CURRENT_TASK.unwrap() as usize,
             (*(CURRENT_TASK.unwrap())).name
         )
@@ -160,16 +226,52 @@ pub fn scheduler() {
 #[no_mangle]
 pub fn task_switch_context() {
     unsafe {
-        hprintln!("old {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
-        if let Some(mut id) = CURRENT_TASK {
-            if id == &TASK_VEC[0] {
-                id = &TASK_VEC[1];
+        // hprintln!("old {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
+        CURRENT_TASK.map(|mut _current_task| {
+            if _current_task == &IDLE_TASK_TCB {
+                if TASK_VEC[1].tick_to_delay == 0 {
+                    CURRENT_TASK = Some(&TASK_VEC[1]);
+                } else if TASK_VEC[0].tick_to_delay == 0 {
+                    CURRENT_TASK = Some(&TASK_VEC[0]);
+                }
             } else {
-                id = &TASK_VEC[0];
+                if _current_task == &TASK_VEC[1] {
+                    if TASK_VEC[0].tick_to_delay == 0 {
+                        CURRENT_TASK = Some(&TASK_VEC[0]);
+                    } else if TASK_VEC[0].tick_to_delay != 0 {
+                        CURRENT_TASK = Some(&IDLE_TASK_TCB);
+                    }
+                } else if _current_task == &TASK_VEC[0] {
+                    if TASK_VEC[1].tick_to_delay == 0 {
+                        CURRENT_TASK = Some(&TASK_VEC[1]);
+                    } else if TASK_VEC[1].tick_to_delay != 0 {
+                        CURRENT_TASK = Some(&IDLE_TASK_TCB);
+                    }
+                }
             }
-            CURRENT_TASK = Some(id);
-        }
+        });
 
-        hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
+        // hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
     }
+}
+
+pub fn task_delay(ms_to_delay: usize) {
+    unsafe {
+        CURRENT_TASK.map(|task| {
+            let t = task as *mut TCB;
+            (*t).tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
+        });
+        taks_yeild!();
+    }
+}
+
+pub fn systick_task_inc() {
+    unsafe {
+        for item in &mut TASK_VEC {
+            if item.tick_to_delay > 0 {
+                item.tick_to_delay -= 1;
+            }
+        }
+    }
+    taks_yeild!();
 }
