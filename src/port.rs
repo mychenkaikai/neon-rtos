@@ -1,4 +1,4 @@
-use crate::task::CURRENT_TASK;
+use crate::task::CURRENT_NEW_TASK;
 use core::arch::asm;
 use core::ptr::addr_of;
 /// 启动第一个任务
@@ -23,7 +23,7 @@ fn port_svc_handler() {
             ".align 4",
             "ldr r1, [r3]",
             "ldr r0, [r1]",
-            in("r3") addr_of!(CURRENT_TASK) as usize + 4,
+            in("r3") addr_of!(CURRENT_NEW_TASK),
         );
         asm!(
             "ldmia r0!, {{r4-r11}}", // Pop the core registers
@@ -51,7 +51,7 @@ fn port_pendsv_handler() {
             "ldr r2, [r3]",
             "stmdb r0!, {{r4-r11}}",
             "str r0, [r2]",
-            in("r3") addr_of!(CURRENT_TASK) as usize + 4,
+            in("r3") addr_of!(CURRENT_NEW_TASK),
         );
 
         asm!(
@@ -69,7 +69,7 @@ fn port_pendsv_handler() {
 
         asm!("ldr r1, [r3]",
         "ldr r0, [r1]",
-        in("r3") addr_of!(CURRENT_TASK) as usize + 4,
+        in("r3") addr_of!(CURRENT_NEW_TASK),
         );
 
         asm!("ldmia r0!, {{r4-r11}}", "msr psp, r0", "isb",);

@@ -9,9 +9,10 @@ mod task;
 use crate::port::*;
 use crate::task::*;
 extern crate alloc;
+
+use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
 use core::panic::PanicInfo;
-use crate::interrupts::*;
 #[panic_handler]
 fn panic_halt(p: &PanicInfo) -> ! {
     hprintln!("{}", p).unwrap();
@@ -41,17 +42,20 @@ unsafe fn DefaultHandler(_val: i16) -> ! {
 
 #[exception]
 unsafe fn SysTick() {
-    disable_interrupts();
-    // hprintln!("SysTick ").unwrap();
-    // loop {}
-    systick_task_inc();
-    enable_interrupts();
+    cortex_m::interrupt::free(|_cs| {
+        systick_task_inc();
+    });
 }
 
 fn test1(_arg: usize) {
     loop {
         hprintln!("task1").unwrap();
-        task_delay(1000);
+        let mut _a = 0;
+        for _ in 0..10000000 {
+            _a += 1;
+        }
+        // taks_yeild!();
+        // task_delay(1000);
     }
 }
 fn test2(_arg: usize) {
@@ -61,7 +65,8 @@ fn test2(_arg: usize) {
         for _ in 0..10000000 {
             _a += 1;
         }
-        taks_yeild!();
+        // taks_yeild!();
+        // task_delay(1000);
     }
 }
 use cortex_m::peripheral::syst::SystClkSource;
@@ -71,12 +76,21 @@ const SYST_FREQ: u32 = 100;
 const SYS_CLOCK: u32 = 12_000_000;
 // 定义 SysTick 的重新加载值
 const SYST_RELOAD: u32 = SYS_CLOCK / SYST_FREQ;
-
-// #[link_section = ".data"]
-// static bb: i32 = 1;
+use alloc::vec;
 #[entry]
 fn main() -> ! {
     init_heap();
+
+    struct TTT {
+        a: usize,
+        b: &'static str,
+        c: Vec<usize>,
+    }
+    let a = TTT {
+        a: 1,
+        b: "123",
+        c: vec![1, 2, 3],
+    };
 
     create_task(test1, "task1", 500, 0).unwrap();
     create_task(test2, "task2", 500, 0).unwrap();
