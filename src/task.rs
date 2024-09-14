@@ -89,13 +89,8 @@ static mut TASK_READY_LIST: List = List::new();
 
 static mut TASK_DELAY_LIST: List = List::new();
 
-static mut TASK_NEW_READY_LIST: LinkedList<TCB> = LinkedList::new();
-
 #[no_mangle]
-pub static mut CURRENT_NEW_TASK: Option<&TCB> = None;
-
-#[no_mangle]
-pub static mut CURRENT_NEW_NEW_TASK: Option<&TCB> = None;
+pub static mut CURRENT_TASK: Option<&TCB> = None;
 
 struct TaskTable {
     task_vec: Vec<TCB>,
@@ -218,24 +213,24 @@ impl List {
         }
     }
 
-    unsafe fn sort(&mut self) {
-        if self.len <= 1 {
-            return;
-        } else {
-            let mut last = self.get_first_mut().unwrap();
-            for (i, item) in self.into_iter().enumerate() {
-                if i > 0 {
-                    if last.item_value > item.item_value {
-                        last.next = item.next;
-                        last.prev = Some(item.id);
-                        item.prev = last.prev;
-                        item.next = Some(last.id);
-                    }
-                    last = item;
-                }
-            }
-        }
-    }
+    // unsafe fn sort(&mut self) {
+    //     if self.len <= 1 {
+    //         return;
+    //     } else {
+    //         let mut last = self.get_first_mut().unwrap();
+    //         for (i, item) in self.into_iter().enumerate() {
+    //             if i > 0 {
+    //                 if last.item_value > item.item_value {
+    //                     last.next = item.next;
+    //                     last.prev = Some(item.id);
+    //                     item.prev = last.prev;
+    //                     item.next = Some(last.id);
+    //                 }
+    //                 last = item;
+    //             }
+    //         }
+    //     }
+    // }
 
     unsafe fn move_task_to_another_list(src: &mut List, dst: &mut List, tcb_id: usize) {
         if src.len == 0 {
@@ -463,12 +458,12 @@ pub fn scheduler() {
         )
         .unwrap();
 
-        if let None = CURRENT_NEW_TASK {
+        if let None = CURRENT_TASK {
             TASK_READY_LIST.next.map(|item| {
-                CURRENT_NEW_TASK = Some(TASK_TABLE.at(item));
+                CURRENT_TASK = Some(TASK_TABLE.at(item));
             });
         }
-        hprintln!("now task is name is {}", CURRENT_NEW_TASK.unwrap().name).unwrap();
+        hprintln!("now task is name is {}", CURRENT_TASK.unwrap().name).unwrap();
         hprintln!("total task is {}", TASK_TABLE.len()).unwrap();
     }
 }
@@ -476,14 +471,14 @@ pub fn scheduler() {
 pub fn task_switch_context() {
     unsafe {
         // hprintln!("old {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
-        CURRENT_NEW_TASK.map(|_current_task| {
+        CURRENT_TASK.map(|_current_task| {
             if _current_task == &IDLE_TASK_TCB {
                 if TASK_READY_LIST.len > 0 {
-                    CURRENT_NEW_TASK = TASK_READY_LIST.get_first();
+                    CURRENT_TASK = TASK_READY_LIST.get_first();
                 }
             } else {
                 if let Some(next_tcb) = _current_task.next() {
-                    CURRENT_NEW_TASK = Some(next_tcb);
+                    CURRENT_TASK = Some(next_tcb);
                 }
             }
         });
@@ -495,7 +490,7 @@ static mut next_delay_task_unblock_time: Option<usize> = None;
 use cortex_m::peripheral::SYST;
 pub fn task_delay(ms_to_delay: usize) {
     unsafe {
-        CURRENT_NEW_TASK.map(|task| {
+        CURRENT_TASK.map(|task| {
             let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
 
             let current_tick = SYST::get_current() as usize;
@@ -546,11 +541,33 @@ pub fn systick_task_inc() {
             }
         }
 
-        if (TASK_READY_LIST.len > 0) {
+        if TASK_READY_LIST.len > 0 {
             should_switch = true;
         }
     }
     if should_switch {
         taks_yeild!();
     }
+}
+
+struct TcbId(usize);
+impl TcbId {
+    fn new(id: usize) -> Self {
+        Self(id)
+    }
+    fn get<'a>(&self) -> &'a TCB {
+        unsafe { TASK_TABLE.at(self.0) }
+    }
+
+    fn get_mut<'a>(&self) -> &'a mut TCB {
+        unsafe { TASK_TABLE.at_mut(self.0) }
+    }
+}
+
+struct ListId(usize);
+
+enum Node {
+    TcbId(TcbId),
+    None,
+    ListId(ListId),
 }

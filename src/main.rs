@@ -76,21 +76,10 @@ const SYST_FREQ: u32 = 100;
 const SYS_CLOCK: u32 = 12_000_000;
 // 定义 SysTick 的重新加载值
 const SYST_RELOAD: u32 = SYS_CLOCK / SYST_FREQ;
-use alloc::vec;
+
 #[entry]
 fn main() -> ! {
     init_heap();
-
-    struct TTT {
-        a: usize,
-        b: &'static str,
-        c: Vec<usize>,
-    }
-    let a = TTT {
-        a: 1,
-        b: "123",
-        c: vec![1, 2, 3],
-    };
 
     create_task(test1, "task1", 500, 0).unwrap();
     create_task(test2, "task2", 500, 0).unwrap();
