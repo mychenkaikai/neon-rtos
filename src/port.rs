@@ -1,6 +1,25 @@
 use crate::task::CURRENT_TASK;
 use core::arch::asm;
 use core::ptr::addr_of;
+
+// pub const SCB_ICSR_PENDSVSET: u32 = 1 << 28;
+#[macro_export]
+macro_rules! taks_yeild {
+    () => {
+        cortex_m::peripheral::SCB::set_pendsv();
+        cortex_m::asm::dsb();
+        cortex_m::asm::isb();
+        // unsafe {
+
+        //     *(0xE000_ED04 as *mut u32) =  SCB_ICSR_PENDSVSET;
+
+        //     asm! {
+        //         "dsb",
+        //         "isb",
+        //     };
+        // }
+    };
+}
 /// 启动第一个任务
 pub unsafe fn v_port_start_first_task() {
     asm!(
