@@ -4,6 +4,8 @@
 mod common;
 use crate::common::*;
 mod interrupts;
+mod list;
+mod mem;
 mod port;
 mod task;
 use crate::port::*;

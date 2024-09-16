@@ -1,14 +1,15 @@
 use alloc::vec::Vec;
-use core::marker::PhantomData;
+
 use core::ptr::{addr_of, NonNull};
 use core::usize;
 use cortex_m::interrupt::free;
 
 use core::result::Result;
 
+use crate::list::*;
+use crate::mem::mem_alloc;
 use crate::taks_yeild;
 use crate::task::LinkType::*;
-use alloc::alloc::*;
 use core::mem;
 use cortex_m_semihosting::hprintln;
 
@@ -25,7 +26,7 @@ pub struct TCB {
     // prev: Option<LinkType>,
     // item_value: Option<usize>,
     // id: TcbId,
-    link_node: LinkNode,
+    pub link_node: LinkNode,
 }
 
 impl TCB {
@@ -79,9 +80,6 @@ fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
 
 static mut NEXT_DELAY_TASK_UNBLOCK_TIME: Option<usize> = None;
 static mut TASK_TABLE: TaskTable = TaskTable::new();
-static mut TASK_READY_LIST: List = List::new();
-
-static mut TASK_DELAY_LIST: List = List::new();
 
 #[no_mangle]
 pub static mut CURRENT_TASK: Option<&TCB> = None;
@@ -114,163 +112,16 @@ impl TaskTable {
     }
 }
 
-struct List {
-    len: usize,
-    link_node: LinkNode,
-}
-impl List {
-    const fn new() -> Self {
-        Self {
-            link_node: LinkNode {
-                next: List(ListId(0)),
-                prev: List(ListId(0)),
-                item_value: None,
-                id: List(ListId(0)),
-            },
-            len: 0,
-        }
-    }
-
-    unsafe fn get_first<'a>(&mut self) -> Option<&'a TCB> {
-        if self.len > 0 {
-            if let Tcb(id) = self.link_node.next {
-                return Some(id.get());
-            }
-        }
-        None
-    }
-
-    unsafe fn get_first_mut<'a>(&mut self) -> Option<&'a mut TCB> {
-        if self.len > 0 {
-            if let Tcb(id) = self.link_node.next {
-                return Some(id.get_mut());
-            }
-        }
-        None
-    }
-
-    unsafe fn ins_to_first(&mut self, new_item_id: TcbId) {
-        if self.len > 0 {
-            self.link_node.join(&mut new_item_id.get_mut().link_node);
-        } else {
-            self.link_node.join(&mut new_item_id.get_mut().link_node);
-        }
-
-        self.len += 1;
-    }
-
-    unsafe fn del(&mut self, del_item_id: TcbId) {
-        if self.len == 0 {
-            panic!()
-        } else if self.len == 1 {
-            self.link_node.next = self.link_node.id;
-            self.link_node.prev = self.link_node.id;
-            self.len = 0;
-        } else {
-            del_item_id.get_mut().link_node.del();
-            self.len -= 1;
-        }
-    }
-}
-
-struct TaskListIter<'a> {
-    node_id: LinkType,
-    index: usize,
-    len: usize,
-    _marker: PhantomData<&'a ()>,
-}
-
-impl<'a> IntoIterator for &'a List {
-    type IntoIter = TaskListIter<'a>;
-    type Item = &'a TCB;
-    fn into_iter(self) -> Self::IntoIter {
-        TaskListIter {
-            len: self.len,
-            node_id: self.link_node.id,
-            index: 0,
-            _marker: PhantomData,
-        }
-    }
-}
-
-struct TaskListIterMut<'a> {
-    node_id: LinkType,
-    // TASK_TABLE: &'a mut TaskTable,
-    index: usize,
-    len: usize,
-    _marker: PhantomData<&'a ()>,
-}
-
-impl<'a> IntoIterator for &'a mut List {
-    type IntoIter = TaskListIterMut<'a>;
-    type Item = &'a mut TCB;
-
-    fn into_iter(self) -> Self::IntoIter {
-        TaskListIterMut {
-            len: self.len,
-            node_id: self.link_node.next,
-            index: 0,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<'a> Iterator for TaskListIter<'a> {
-    type Item = &'a TCB;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.len == 0 {
-            return None;
-        }
-        if self.index >= self.len {
-            return None;
-        }
-
-        if let Tcb(a) = self.node_id {
-            self.index += 1;
-            self.node_id = a.get().link_node.next;
-            return Some(a.get());
-        };
-
-        None
-    }
-}
-
-impl<'a> Iterator for TaskListIterMut<'a> {
-    type Item = &'a mut TCB;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.len == 0 {
-            return None;
-        }
-        if self.index >= self.len {
-            return None;
-        }
-        if let Tcb(a) = self.node_id {
-            self.index += 1;
-            self.node_id = a.get().link_node.next;
-            return Some(a.get_mut());
-        };
-
-        None
-    }
-}
-
 pub fn create_task(
     func: fn(usize),
     task_name: &'static str,
     size: usize,
     arg: usize,
 ) -> Result<(), &'static str> {
-    let layout = Layout::from_size_align(size, 1).unwrap();
-    let memory = unsafe { alloc(layout) };
-
-    if memory.is_null() {
-        return Err("memory.is_null");
-    }
-
     // disable_interrupts();
     unsafe {
         let mut tcb = TCB::new();
-
+        let memory = mem_alloc(size);
         create_static_task(func, task_name, arg, memory as usize, size, &mut tcb);
         let new_id = TASK_TABLE.len();
         tcb.link_node.id = Tcb(TcbId(new_id));
@@ -283,9 +134,6 @@ pub fn create_task(
     // 使用 `memory` 进行读写操作...
 
     // 使用完后释放内存
-    // unsafe {
-    //     dealloc(memory, layout);
-    // }
 }
 
 pub fn create_static_task(
@@ -379,7 +227,7 @@ pub fn task_switch_context() {
             } else {
                 match _current_task.link_node.next {
                     Tcb(tcb) => CURRENT_TASK = Some(tcb.get()),
-                    LinkType::List(list) => CURRENT_TASK = list.get_mut().get_first(),
+                    LinkType::Listid(list) => CURRENT_TASK = list.get_mut().get_first(),
                     Null => panic!(),
                 }
             }
@@ -449,24 +297,24 @@ pub fn systick_task_inc() {
     }
 }
 #[derive(PartialEq, Clone, Copy)]
-struct TcbId(usize);
+pub struct TcbId(usize);
 impl TcbId {
     fn new(id: usize) -> Self {
         Self(id)
     }
-    fn get<'a>(&self) -> &'a TCB {
+    pub fn get<'a>(&self) -> &'a TCB {
         unsafe { TASK_TABLE.at(self.0) }
     }
 
-    fn get_mut<'a>(&self) -> &'a mut TCB {
+    pub fn get_mut<'a>(&self) -> &'a mut TCB {
         unsafe { TASK_TABLE.at_mut(self.0) }
     }
 }
 #[derive(PartialEq, Clone, Copy)]
-struct ListId(usize);
+pub struct ListId(usize);
 
 impl ListId {
-    fn get_mut(&self) -> &mut List {
+    fn get_mut(&self) -> &mut crate::task::List {
         if self.0 == 0 {
             unsafe { &mut TASK_READY_LIST }
         } else {
@@ -477,21 +325,29 @@ impl ListId {
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct LinkNode {
-    next: LinkType,
-    prev: LinkType,
+    pub next: LinkType,
+    pub prev: LinkType,
     item_value: Option<usize>,
-    id: LinkType,
+    pub id: LinkType,
 }
 
 #[derive(PartialEq, Clone, Copy)]
-enum LinkType {
+pub enum LinkType {
     Tcb(TcbId),
-    List(ListId),
+    Listid(ListId),
     Null,
 }
 
 impl LinkNode {
-    fn join(&mut self, second_node: &mut LinkNode) {
+    pub const fn new() -> Self {
+        Self {
+            next: Listid(ListId(0)),
+            prev: Listid(ListId(0)),
+            item_value: None,
+            id: Listid(ListId(0)),
+        }
+    }
+    pub fn join(&mut self, second_node: &mut LinkNode) {
         let third_node = self.next.get_mut();
 
         third_node.prev = second_node.id;
@@ -501,7 +357,7 @@ impl LinkNode {
 
         // let second = second_node.get_mut();
     }
-    fn del(&mut self) {
+    pub fn del(&mut self) {
         let mut a = self.prev.get_mut();
         let mut b = self.next.get_mut();
         a.join(b);
@@ -512,7 +368,7 @@ impl LinkType {
     fn get_mut(&self) -> &mut LinkNode {
         match self {
             Tcb(id) => &mut id.get_mut().link_node,
-            List(id) => &mut id.get_mut().link_node,
+            Listid(id) => &mut id.get_mut().link_node,
             Null => panic!(),
         }
     }
