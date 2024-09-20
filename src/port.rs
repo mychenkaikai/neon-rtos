@@ -1,10 +1,11 @@
-use crate::task::CURRENT_TASK;
-use core::arch::asm;
-use core::ptr::addr_of;
+use crate::task::*;
+use core::{arch::asm, ptr::addr_of};
+// use core::ptr::addr_of;
+// use core::ptr::*;
 
 // pub const SCB_ICSR_PENDSVSET: u32 = 1 << 28;
 #[macro_export]
-macro_rules! taks_yeild {
+macro_rules! task_yield {
     () => {
         cortex_m::peripheral::SCB::set_pendsv();
         cortex_m::asm::dsb();
@@ -42,6 +43,7 @@ fn port_svc_handler() {
             ".align 4",
             "ldr r1, [r3]",
             "ldr r0, [r1]",
+            // in("r3") get_mut_current_task().unwrap().as_ptr(),
             in("r3") addr_of!(CURRENT_TASK),
         );
         asm!(

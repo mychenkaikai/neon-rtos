@@ -1,58 +1,179 @@
 use alloc::vec::Vec;
 
 use core::ptr::{addr_of, NonNull};
-use core::usize;
+use core::{arch, option, usize};
 use cortex_m::interrupt::free;
 
 use core::result::Result;
 
 use crate::list::*;
 use crate::mem::mem_alloc;
-use crate::taks_yeild;
-use crate::task::LinkType::*;
+use crate::task_yield;
+
+use core::cell::UnsafeCell;
 use core::mem;
 use cortex_m_semihosting::hprintln;
 
 use cortex_m::peripheral::SYST;
+
+use core::ptr::addr_of_mut;
+
+static mut NEXT_DELAY_TASK_UNBLOCK_TIME: UnsafeCell<Option<usize>> = UnsafeCell::new(None);
+// static mut TASK_TABLE: TaskTable = TaskTable::new();
+
+#[no_mangle]
+pub static mut CURRENT_TASK: UnsafeCell<Option<NonNull<TCB>>> = UnsafeCell::new(None);
+
+pub fn get_mut_current_task() -> &'static mut Option<NonNull<TCB>> {
+    unsafe { &mut (*CURRENT_TASK.get_mut()) }
+}
+
+pub fn set_current_task(tcb: NonNull<TCB>) {
+    let a = get_mut_current_task();
+    *a = Some(tcb);
+}
+
+pub fn get_unblock_time() -> &'static mut Option<usize> {
+    unsafe { &mut (*NEXT_DELAY_TASK_UNBLOCK_TIME.get_mut()) }
+}
+
+pub unsafe fn get_list_of_tcb(tcb: NonNull<TCB>) -> Option<NonNull<List>> {
+    tcb.as_ref().list_handle
+}
+
+pub fn safely_modify_current(f: impl FnOnce(&mut Option<NonNull<TCB>>)) {
+    unsafe {
+        let list = &mut *CURRENT_TASK.get();
+        f(list);
+    }
+}
+
+pub fn safely_modify_idle(f: impl FnOnce(&mut Option<NonNull<TCB>>)) {
+    unsafe {
+        let list = &mut *IDLE_TASK_TCB.get();
+        f(list);
+    }
+}
+
+fn get_idle_task() -> &'static Option<NonNull<TCB>> {
+    unsafe { &(*IDLE_TASK_TCB.get()) }
+}
+
+pub fn safely_modify_unblock_time(f: impl FnOnce(&mut Option<usize>)) {
+    unsafe {
+        let list = &mut *NEXT_DELAY_TASK_UNBLOCK_TIME.get();
+        f(list);
+    }
+}
+
+pub fn safely_modify_tcb(mut tcb: NonNull<TCB>, f: impl FnOnce(&mut TCB)) {
+    unsafe {
+        let tcb = tcb.as_mut();
+        f(tcb);
+    }
+}
 
 #[derive(PartialEq)]
 #[repr(C)]
 pub struct TCB {
     pub top_of_stack: usize,
     pub stack_addr: usize,
-    name: &'static str,
-    stack_size: usize,
-    // next: Option<LinkType>,
-    // prev: Option<LinkType>,
-    // item_value: Option<usize>,
-    // id: TcbId,
-    pub link_node: LinkNode,
+    pub name: &'static str,
+    pub stack_size: usize,
+    pub next: Option<NonNull<TCB>>,
+    pub prev: Option<NonNull<TCB>>,
+    pub item_value: Option<usize>,
+    pub self_handle: NonNull<TCB>,
+    pub list_handle: Option<NonNull<List>>,
+    // pub link_node: LinkNode,
 }
-
+use crate::mem::mem_alloc_type;
+use core::ptr;
 impl TCB {
-    fn new() -> Self {
-        Self {
+    pub fn new() -> NonNull<TCB> {
+        let ptr = mem_alloc_type::<TCB>();
+
+        let nonnull_ptr = unsafe { NonNull::new_unchecked(ptr) };
+
+        let value = Self {
             top_of_stack: 0,
             stack_addr: 0,
             name: "none",
             stack_size: 0,
-            link_node: LinkNode {
-                prev: LinkType::Null,
-                next: LinkType::Null,
-                item_value: None,
-                id: LinkType::Null,
-            },
+            prev: None,
+            next: None,
+            item_value: None,
+            self_handle: nonnull_ptr,
+            list_handle: None,
+        };
+
+        unsafe {
+            ptr::write(ptr, value);
         }
+        nonnull_ptr
     }
 
-    // unsafe fn next<'a>(&self) -> Option<&'a TCB> {
-    //     match self.next{
-    //         LinkType::TcbId(_) => todo!(),
-    //         LinkType::None => todo!(),
-    //         LinkType::ListId(_) => todo!(),
-    //     }
-    //     // self.next.map_or(None, |id| Some(TASK_TABLE.at(id)))
-    // }
+    pub fn set_next(&mut self, item: Option<NonNull<TCB>>) {
+        self.next = item;
+    }
+    pub fn set_prev(&mut self, item: Option<NonNull<TCB>>) {
+        self.prev = item;
+    }
+
+    unsafe fn join(&mut self, mut item: NonNull<TCB>) {
+        // self.set_next(Some(item));
+        // self.set_prev(Some(item));
+
+        if self.next != None {
+            let mut old_next = self.next.unwrap();
+
+            self.set_next(Some(item));
+
+            item.as_mut().set_next(Some(old_next));
+            item.as_mut().set_prev(Some(self.self_handle));
+
+            old_next.as_mut().set_prev(Some(item));
+        } else {
+            self.set_next(Some(item));
+
+            item.as_mut().set_next(None);
+            item.as_mut().set_prev(Some(self.self_handle));
+
+            self.list_handle.unwrap().as_mut().set_prev(Some(item));
+        }
+        //todo
+        item.as_mut().list_handle = self.list_handle;
+    }
+
+    pub fn set_list(&mut self, item: Option<NonNull<List>>) {
+        self.list_handle = item;
+    }
+
+    pub unsafe fn del(&mut self) {
+        let list: &mut List = self.list_handle.unwrap().as_mut();
+        if self.prev.is_none() {
+            match self.next {
+                Some(mut next_item) => {
+                    list.set_next(Some(next_item));
+                    next_item.as_mut().set_prev(None);
+                }
+                None => list.set_next(None),
+            }
+        } else {
+            let prev_item = self.prev;
+
+            match self.next {
+                Some(mut next_item) => {
+                    prev_item.unwrap().as_mut().set_next(Some(next_item));
+                    next_item.as_mut().set_prev(prev_item);
+                }
+                None => {
+                    prev_item.unwrap().as_mut().set_next(None);
+                    list.set_prev(prev_item);
+                }
+            }
+        }
+    }
 }
 
 fn task_exit_error() {
@@ -78,40 +199,6 @@ fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
     ()
 }
 
-static mut NEXT_DELAY_TASK_UNBLOCK_TIME: Option<usize> = None;
-static mut TASK_TABLE: TaskTable = TaskTable::new();
-
-#[no_mangle]
-pub static mut CURRENT_TASK: Option<&TCB> = None;
-
-struct TaskTable {
-    task_vec: Vec<TCB>,
-}
-
-impl TaskTable {
-    const fn new() -> Self {
-        Self {
-            task_vec: Vec::new(),
-        }
-    }
-
-    fn at<'a>(&'a self, id: usize) -> &'a TCB {
-        &self.task_vec[id]
-    }
-
-    fn at_mut<'a>(&'a mut self, id: usize) -> &'a mut TCB {
-        &mut self.task_vec[id]
-    }
-
-    fn len(&mut self) -> usize {
-        self.task_vec.len()
-    }
-
-    fn add(&mut self, tcb: TCB) {
-        self.task_vec.push(tcb);
-    }
-}
-
 pub fn create_task(
     func: fn(usize),
     task_name: &'static str,
@@ -119,16 +206,35 @@ pub fn create_task(
     arg: usize,
 ) -> Result<(), &'static str> {
     // disable_interrupts();
-    unsafe {
-        let mut tcb = TCB::new();
-        let memory = mem_alloc(size);
-        create_static_task(func, task_name, arg, memory as usize, size, &mut tcb);
-        let new_id = TASK_TABLE.len();
-        tcb.link_node.id = Tcb(TcbId(new_id));
-        TASK_TABLE.add(tcb);
 
-        TASK_READY_LIST.ins_to_first(TcbId(new_id));
-    }
+    let tcb = TCB::new();
+
+    let memory = mem_alloc(size);
+    create_static_task(func, task_name, arg, memory as usize, size, tcb).unwrap();
+
+    safely_modify_ready_list(|list| list.ins_to_first(tcb));
+
+    // enable_interrupts();
+    Ok(())
+    // 使用 `memory` 进行读写操作...
+
+    // 使用完后释放内存
+}
+
+pub fn create_idle_task() -> Result<(), &'static str> {
+    let size = 500;
+    let func = idle_task;
+    let task_name: &'static str = "idle";
+    let arg = 0;
+    // disable_interrupts();
+
+    let tcb = TCB::new();
+
+    safely_modify_idle(|idle| *idle = Some(tcb));
+
+    let memory = mem_alloc(size);
+    create_static_task(func, task_name, arg, memory as usize, size, tcb).unwrap();
+
     // enable_interrupts();
     Ok(())
     // 使用 `memory` 进行读写操作...
@@ -142,38 +248,30 @@ pub fn create_static_task(
     arg: usize,
     stack_addr: usize,
     size: usize,
-    tcb: &mut TCB,
+    tcb: NonNull<TCB>,
 ) -> Result<(), &'static str> {
     // disable_interrupts();
 
     let mut top_of_stack = stack_addr as usize + (size - 1);
     top_of_stack = top_of_stack & (!(0x0007));
 
-    tcb.top_of_stack = top_of_stack;
-    tcb.stack_addr = stack_addr as usize;
-    tcb.name = task_name;
-    tcb.stack_size = size;
-    tcb.link_node.prev = Null;
-    tcb.link_node.next = Null;
-    tcb.link_node.item_value = None;
-
-    init_task_stack(&mut tcb.top_of_stack, func, arg);
-    hprintln!(
-        "task: start{:x} top{:x} top{:x} ",
-        stack_addr as usize,
-        tcb.top_of_stack,
-        stack_addr as usize + (size - 1)
-    )
-    .unwrap();
+    safely_modify_tcb(tcb, |tcb| {
+        tcb.top_of_stack = top_of_stack;
+        tcb.stack_addr = stack_addr as usize;
+        tcb.name = task_name;
+        tcb.stack_size = size;
+        init_task_stack(&mut tcb.top_of_stack, func, arg);
+        hprintln!(
+            "task: start{:x} top{:x} top{:x} ",
+            stack_addr as usize,
+            tcb.top_of_stack,
+            stack_addr as usize + (size - 1)
+        )
+        .unwrap();
+    });
 
     // enable_interrupts();
     Ok(())
-    // 使用 `memory` 进行读写操作...
-
-    // 使用完后释放内存
-    // unsafe {
-    //     dealloc(memory, layout);
-    // }
 }
 
 fn idle_task(_arg: usize) {
@@ -181,195 +279,126 @@ fn idle_task(_arg: usize) {
         cortex_m::asm::wfi();
     }
 }
-static mut IDLE_TASK_STACK: [u8; 500] = [0; 500];
-static mut IDLE_TASK_TCB: TCB = TCB {
-    top_of_stack: 0,
-    stack_addr: 0,
-    name: "idle",
-    stack_size: 0,
-    link_node: LinkNode {
-        prev: Null,
-        next: Null,
-        item_value: None,
-        id: Null,
-    },
-};
-pub fn scheduler() {
-    unsafe {
-        create_static_task(
-            idle_task,
-            "idle",
-            0,
-            addr_of!(IDLE_TASK_STACK) as usize,
-            500,
-            &mut IDLE_TASK_TCB,
-        )
-        .unwrap();
 
-        if let None = CURRENT_TASK {
-            TASK_READY_LIST.get_first().map(|item| {
-                CURRENT_TASK = Some(item);
-            });
+static mut IDLE_TASK_TCB: UnsafeCell<Option<NonNull<TCB>>> = UnsafeCell::new(None);
+pub fn scheduler() {
+    create_idle_task().unwrap();
+
+    safely_modify_current(|curr_task| {
+        if let None = curr_task {
+            *curr_task = safely_ready_process_list(|index, tcb| true);
         }
-        hprintln!("now task is name is {}", CURRENT_TASK.unwrap().name).unwrap();
-        hprintln!("total task is {}", TASK_TABLE.len()).unwrap();
-    }
+
+        safely_modify_tcb(curr_task.unwrap(), |item| {
+            hprintln!("now task is name is {}", item.name).unwrap();
+        });
+    });
+
+    safely_modify_ready_list(|rlist| {
+        hprintln!("total task is {}", rlist.len).unwrap();
+    });
 }
 #[no_mangle]
 pub fn task_switch_context() {
-    unsafe {
-        // hprintln!("old {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
-        CURRENT_TASK.map(|_current_task| {
-            if _current_task == &IDLE_TASK_TCB {
-                if TASK_READY_LIST.len > 0 {
-                    CURRENT_TASK = TASK_READY_LIST.get_first();
-                }
+    safely_modify_current(|curr| {
+        if let Some(_curr) = curr {
+            if *_curr == get_idle_task().unwrap() {
+                safely_modify_ready_list(|list| {
+                    if list.len > 0 {
+                        set_current_task(list.get_first().unwrap());
+                    }
+                });
             } else {
-                match _current_task.link_node.next {
-                    Tcb(tcb) => CURRENT_TASK = Some(tcb.get()),
-                    LinkType::Listid(list) => CURRENT_TASK = list.get_mut().get_first(),
-                    Null => panic!(),
-                }
+                // let cur = _current_task.as_ref();
+                safely_modify_tcb(*_curr, |tcb| match tcb.next {
+                    Some(next_item) => set_current_task(next_item),
+                    None => safely_modify_list(tcb.list_handle.unwrap(), |list| {
+                        if list.len > 0 {
+                            set_current_task(list.next.unwrap());
+                        } else {
+                            set_current_task(get_idle_task().unwrap());
+                        }
+                    }),
+                });
             }
-        });
+        }
+    })
 
-        // hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
-    }
+    // hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
 }
 
+#[allow(unused)]
 pub fn task_delay(ms_to_delay: usize) {
-    unsafe {
-        CURRENT_TASK.map(|task| {
-            let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
+    if let Some(mut task) = get_mut_current_task() {
+        // 防止溢出
+        if ms_to_delay > usize::MAX / 1000 {
+            panic!("Delay time is too large and may cause overflow");
+        }
 
-            let current_tick = SYST::get_current() as usize;
+        let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
 
-            let expect_tick = current_tick + tick_to_delay;
-            task.link_node.id.get_mut().item_value = Some(expect_tick);
-
-            if expect_tick < current_tick {
-            } else {
-                NEXT_DELAY_TASK_UNBLOCK_TIME = Some(expect_tick);
-                if let Tcb(tcb_id) = task.link_node.id {
-                    TASK_READY_LIST.del(tcb_id);
-                    TASK_DELAY_LIST.ins_to_first(tcb_id);
-                }
-            }
+        let current_tick = SYST::get_current() as usize;
+        let expect_tick = current_tick.checked_add(tick_to_delay).unwrap_or_else(|| {
+            panic!("Adding ticks to current tick caused an overflow");
         });
-        taks_yeild!();
+
+        let mut task_ref = unsafe { task.as_mut() };
+
+        task_ref.item_value = Some(expect_tick);
+
+        if expect_tick < current_tick {
+            // 处理不合理的情况
+            hprintln!("Warning: Delay time is negative, ignoring delay.");
+            task_yield!(); // 直接调度任务
+        } else {
+            safely_modify_unblock_time(|unblock_time| {
+                *unblock_time = Some(expect_tick);
+            });
+
+            safely_modify_ready_list(|rlist| {
+                rlist.del(task);
+            });
+
+            safely_modify_delay_list(|dlist| {
+                dlist.ins_to_first(task);
+            });
+        }
     }
+
+    task_yield!(); // 修正拼写错误
 }
 
 pub fn systick_task_inc() {
     let mut should_switch = false;
-    unsafe {
-        if let Some(expect_time) = NEXT_DELAY_TASK_UNBLOCK_TIME {
+    {
+        if let Some(expect_time) = get_unblock_time() {
             let current_time = SYST::get_current() as usize;
-            if current_time >= expect_time {
+            if current_time >= *expect_time {
                 loop {
-                    if TASK_DELAY_LIST.len == 0 {
-                        NEXT_DELAY_TASK_UNBLOCK_TIME = None;
+                    if get_task_delay_list().len == 0 {
+                        *(get_unblock_time()) = None;
+                        // NEXT_DELAY_TASK_UNBLOCK_TIME = None;
                         break;
                     } else {
-                        let item = TASK_DELAY_LIST.get_first().unwrap().link_node;
+                        if let Some(item) = safely_delay_process_list(|index, tcb| true) {
+                            safely_modify_delay_list(|dlist| {
+                                dlist.del(item);
+                            });
 
-                        if item.item_value.unwrap() > current_time {
-                            break;
+                            safely_modify_ready_list(|rlist| {
+                                rlist.ins_to_first(item);
+                            });
                         }
-
-                        if let Tcb(tcb_id) = item.id {
-                            TASK_READY_LIST.del(tcb_id);
-                            TASK_DELAY_LIST.ins_to_first(tcb_id);
-                        }
-
-                        // TASK_DELAY_LIST.sort(&mut TASK_TABLE);
                     }
                 }
             }
         }
 
-        if TASK_READY_LIST.len > 0 {
+        if get_mut_task_ready_list().len > 0 {
             should_switch = true;
         }
     }
     if should_switch {
-        taks_yeild!();
-    }
-}
-#[derive(PartialEq, Clone, Copy)]
-pub struct TcbId(usize);
-impl TcbId {
-    fn new(id: usize) -> Self {
-        Self(id)
-    }
-    pub fn get<'a>(&self) -> &'a TCB {
-        unsafe { TASK_TABLE.at(self.0) }
-    }
-
-    pub fn get_mut<'a>(&self) -> &'a mut TCB {
-        unsafe { TASK_TABLE.at_mut(self.0) }
-    }
-}
-#[derive(PartialEq, Clone, Copy)]
-pub struct ListId(usize);
-
-impl ListId {
-    fn get_mut(&self) -> &mut crate::task::List {
-        if self.0 == 0 {
-            unsafe { &mut TASK_READY_LIST }
-        } else {
-            unsafe { &mut TASK_READY_LIST }
-        }
-    }
-}
-
-#[derive(PartialEq, Clone, Copy)]
-pub struct LinkNode {
-    pub next: LinkType,
-    pub prev: LinkType,
-    item_value: Option<usize>,
-    pub id: LinkType,
-}
-
-#[derive(PartialEq, Clone, Copy)]
-pub enum LinkType {
-    Tcb(TcbId),
-    Listid(ListId),
-    Null,
-}
-
-impl LinkNode {
-    pub const fn new() -> Self {
-        Self {
-            next: Listid(ListId(0)),
-            prev: Listid(ListId(0)),
-            item_value: None,
-            id: Listid(ListId(0)),
-        }
-    }
-    pub fn join(&mut self, second_node: &mut LinkNode) {
-        let third_node = self.next.get_mut();
-
-        third_node.prev = second_node.id;
-        second_node.next = third_node.id;
-        self.next = second_node.id;
-        second_node.prev = self.id;
-
-        // let second = second_node.get_mut();
-    }
-    pub fn del(&mut self) {
-        let mut a = self.prev.get_mut();
-        let mut b = self.next.get_mut();
-        a.join(b);
-    }
-}
-
-impl LinkType {
-    fn get_mut(&self) -> &mut LinkNode {
-        match self {
-            Tcb(id) => &mut id.get_mut().link_node,
-            Listid(id) => &mut id.get_mut().link_node,
-            Null => panic!(),
-        }
+        task_yield!();
     }
 }
