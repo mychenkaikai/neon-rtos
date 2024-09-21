@@ -145,6 +145,9 @@ impl List {
         if self.len == 0 {
             self.set_next(Some(p_item));
             self.set_prev(Some(p_item));
+            item.set_next(None);
+            item.set_prev(None);
+            item.set_list(Some(NonNull::from(self)));
         } else {
             let mut p_old = self.next.unwrap();
 
@@ -155,9 +158,8 @@ impl List {
             item.set_prev(None);
 
             old.set_prev(Some(p_item));
+            item.set_list(Some(NonNull::from(self)));
         }
-
-        item.set_list(Some(NonNull::from(self)));
     }
 
     pub fn ins_to_first(&mut self, new_item: NonNull<TCB>) {

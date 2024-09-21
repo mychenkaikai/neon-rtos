@@ -1,4 +1,7 @@
+use alloc::boxed::Box;
+use alloc::ffi::NulError;
 use alloc::vec::Vec;
+use cortex_m::asm::nop;
 
 use core::ptr::{addr_of, NonNull};
 use core::{arch, option, usize};
@@ -6,6 +9,7 @@ use cortex_m::interrupt::free;
 
 use core::result::Result;
 
+use crate::interrupts::{disable_interrupts, enable_interrupts};
 use crate::list::*;
 use crate::mem::mem_alloc;
 use crate::task_yield;
@@ -24,6 +28,12 @@ static mut NEXT_DELAY_TASK_UNBLOCK_TIME: UnsafeCell<Option<usize>> = UnsafeCell:
 #[no_mangle]
 pub static mut CURRENT_TASK: UnsafeCell<Option<NonNull<TCB>>> = UnsafeCell::new(None);
 
+impl<'a> Into<&'a TCB> for NonNull<TCB> {
+    fn into(self) -> &'a TCB {
+        unsafe { self.as_ref() }
+    }
+}
+
 pub fn get_mut_current_task() -> &'static mut Option<NonNull<TCB>> {
     unsafe { &mut (*CURRENT_TASK.get_mut()) }
 }
@@ -33,7 +43,7 @@ pub fn set_current_task(tcb: NonNull<TCB>) {
     *a = Some(tcb);
 }
 
-pub fn get_unblock_time() -> &'static mut Option<usize> {
+pub fn get_unblock_time<'a>() -> &'a mut Option<usize> {
     unsafe { &mut (*NEXT_DELAY_TASK_UNBLOCK_TIME.get_mut()) }
 }
 
@@ -91,10 +101,6 @@ use crate::mem::mem_alloc_type;
 use core::ptr;
 impl TCB {
     pub fn new() -> NonNull<TCB> {
-        let ptr = mem_alloc_type::<TCB>();
-
-        let nonnull_ptr = unsafe { NonNull::new_unchecked(ptr) };
-
         let value = Self {
             top_of_stack: 0,
             stack_addr: 0,
@@ -103,14 +109,14 @@ impl TCB {
             prev: None,
             next: None,
             item_value: None,
-            self_handle: nonnull_ptr,
+            self_handle: NonNull::dangling(),
             list_handle: None,
         };
-
+        let mut ptr = NonNull::from(Box::leak(Box::new(value)));
         unsafe {
-            ptr::write(ptr, value);
+            ptr.as_mut().self_handle = ptr;
         }
-        nonnull_ptr
+        ptr
     }
 
     pub fn set_next(&mut self, item: Option<NonNull<TCB>>) {
@@ -156,6 +162,7 @@ impl TCB {
                 Some(mut next_item) => {
                     list.set_next(Some(next_item));
                     next_item.as_mut().set_prev(None);
+                    self.set_next(None);
                 }
                 None => list.set_next(None),
             }
@@ -166,13 +173,16 @@ impl TCB {
                 Some(mut next_item) => {
                     prev_item.unwrap().as_mut().set_next(Some(next_item));
                     next_item.as_mut().set_prev(prev_item);
+                    self.set_next(None);
                 }
                 None => {
                     prev_item.unwrap().as_mut().set_next(None);
                     list.set_prev(prev_item);
                 }
             }
+            self.set_prev(None);
         }
+        self.list_handle = None;
     }
 }
 
@@ -182,7 +192,6 @@ fn task_exit_error() {
 }
 
 fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
-    // ptr::read_volatile(0x2FFF_FFFF as *const u32);
     unsafe {
         *top_of_stack -= 1 * mem::size_of::<usize>();
         let ptr = (*top_of_stack) as *mut usize;
@@ -195,8 +204,6 @@ fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
         *(*top_of_stack as *mut usize) = p_args;
         *top_of_stack -= 8 * mem::size_of::<usize>();
     }
-
-    ()
 }
 
 pub fn create_task(
@@ -310,17 +317,29 @@ pub fn task_switch_context() {
                 });
             } else {
                 // let cur = _current_task.as_ref();
-                safely_modify_tcb(*_curr, |tcb| match tcb.next {
-                    Some(next_item) => set_current_task(next_item),
-                    None => safely_modify_list(tcb.list_handle.unwrap(), |list| {
-                        if list.len > 0 {
-                            set_current_task(list.next.unwrap());
-                        } else {
-                            set_current_task(get_idle_task().unwrap());
-                        }
-                    }),
+                // safely_modify_tcb(*_curr, |tcb| match tcb.next {
+                //     Some(next_item) => set_current_task(next_item),
+                //     None => {
+                //         safely_modify_ready_list(|list| {
+                //             if list.len > 0 {
+                //                 set_current_task(list.get_first().unwrap());
+                //             } else {
+                //                 set_current_task(get_idle_task().unwrap());
+                //             }
+                //         });
+                //     }
+                // });
+
+                safely_modify_ready_list(|list| {
+                    if list.len > 0 {
+                        set_current_task(list.get_first().unwrap());
+                    } else {
+                        set_current_task(get_idle_task().unwrap());
+                    }
                 });
             }
+        } else {
+            nop();
         }
     })
 
@@ -337,7 +356,7 @@ pub fn task_delay(ms_to_delay: usize) {
 
         let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
 
-        let current_tick = SYST::get_current() as usize;
+        let current_tick = unsafe { TICKS_COUNT as usize };
         let expect_tick = current_tick.checked_add(tick_to_delay).unwrap_or_else(|| {
             panic!("Adding ticks to current tick caused an overflow");
         });
@@ -354,7 +373,7 @@ pub fn task_delay(ms_to_delay: usize) {
             safely_modify_unblock_time(|unblock_time| {
                 *unblock_time = Some(expect_tick);
             });
-
+            // disable_interrupts();
             safely_modify_ready_list(|rlist| {
                 rlist.del(task);
             });
@@ -362,17 +381,21 @@ pub fn task_delay(ms_to_delay: usize) {
             safely_modify_delay_list(|dlist| {
                 dlist.ins_to_first(task);
             });
+            // enable_interrupts();
         }
     }
 
     task_yield!(); // 修正拼写错误
 }
-
+static mut TICKS_COUNT: usize = 0;
 pub fn systick_task_inc() {
+    unsafe {
+        TICKS_COUNT += 1;
+    }
     let mut should_switch = false;
     {
         if let Some(expect_time) = get_unblock_time() {
-            let current_time = SYST::get_current() as usize;
+            let current_time = unsafe { TICKS_COUNT as usize };
             if current_time >= *expect_time {
                 loop {
                     if get_task_delay_list().len == 0 {
@@ -380,6 +403,7 @@ pub fn systick_task_inc() {
                         // NEXT_DELAY_TASK_UNBLOCK_TIME = None;
                         break;
                     } else {
+                        // disable_interrupts();
                         if let Some(item) = safely_delay_process_list(|index, tcb| true) {
                             safely_modify_delay_list(|dlist| {
                                 dlist.del(item);
@@ -389,6 +413,7 @@ pub fn systick_task_inc() {
                                 rlist.ins_to_first(item);
                             });
                         }
+                        // enable_interrupts();
                     }
                 }
             }

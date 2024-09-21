@@ -14,6 +14,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use alloc_cortex_m::CortexMHeap;
+use core::f32::NAN;
 use core::panic::PanicInfo;
 use core::ptr::addr_of;
 use core::ptr::addr_of_mut;
@@ -55,10 +56,10 @@ unsafe fn SysTick() {
 fn test1(_arg: usize) {
     loop {
         hprintln!("task1").unwrap();
-        let mut _a = 0;
-        for _ in 0..10000000 {
-            _a += 1;
-        }
+        // let mut _a = 0;
+        // for _ in 0..10000000 {
+        //     _a += 1;
+        // }
         // task_yield!();
         task_delay(1000);
     }
@@ -66,10 +67,10 @@ fn test1(_arg: usize) {
 fn test2(_arg: usize) {
     loop {
         hprintln!("task2").unwrap();
-        let mut _a = 0;
-        for _ in 0..10000000 {
-            _a += 1;
-        }
+        // let mut _a = 0;
+        // for _ in 0..10000000 {
+        //     _a += 1;
+        // }
         // task_yield!();
         task_delay(1000);
     }
@@ -83,31 +84,9 @@ const SYS_CLOCK: u32 = 12_000_000;
 // 定义 SysTick 的重新加载值
 const SYST_RELOAD: u32 = SYS_CLOCK / SYST_FREQ;
 
-use alloc::collections::LinkedList;
-use core::cell::UnsafeCell;
-static mut TT: UnsafeCell<LinkedList<TCB>> = UnsafeCell::new(LinkedList::new());
-
 #[entry]
 fn main() -> ! {
     init_heap();
-
-    unsafe {
-        TT.get_mut().push_back(TCB {
-            top_of_stack: 0,
-            stack_addr: 0,
-            name: "none",
-            stack_size: 0,
-            prev: None,
-            next: None,
-            item_value: None,
-            self_handle: NonNull::dangling(),
-            list_handle: None,
-        });
-        TT.get_mut().back_mut().unwrap().self_handle = NonNull::new_unchecked
-        // (((TT.get_mut().back().unwrap())as *const TCB as *mut TCB));
-        ((addr_of_mut!((*TT.get_mut().back_mut().unwrap()))));
-    }
-
     create_task(test1, "task1", 500, 0).unwrap();
     create_task(test2, "task2", 500, 0).unwrap();
 
