@@ -11,6 +11,8 @@ panic-halt = "0.2.0"
 alloc-cortex-m = "0.4.4"
 lazy_static = { version = "1.5.0", default-features = false, features = ["spin_no_std"] }
 
+[dev-dependencies]
+
 
 [profile.dev]
 opt-level = 0

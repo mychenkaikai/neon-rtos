@@ -1,6 +1,6 @@
-use core::{mem, usize};
-
-use alloc::{alloc::*, boxed::Box};
+use core::{mem, usize,};
+use core::alloc::Layout;
+use alloc::alloc::*;
 use core::ptr;
 
 pub fn mem_alloc(size: usize) -> *mut u8 {

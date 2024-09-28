@@ -1,9 +1,10 @@
-use crate::mem::*;
+use cortex_m::asm::nop;
+use cortex_m_semihosting::hprintln;
 
 use crate::task::*;
 use core::cell::UnsafeCell;
 use core::marker::PhantomData;
-use core::ptr::{addr_of, NonNull};
+use core::ptr::NonNull;
 
 // pub static mut TASK_READY_LIST:List = List::new();
 // pub static mut TASK_READY_LIST:List = List::new();
@@ -163,8 +164,64 @@ impl List {
     }
 
     pub fn ins_to_first(&mut self, new_item: NonNull<TCB>) {
-        self.join(new_item);
+        // 获取 new_item 的 item_value，确保不为空
+        let new_item_value = unsafe {
+            match new_item.as_ref().item_value {
+                Some(item) => item,
+                None => {
+                    self.join(new_item);
+                    self.len += 1;
+                    return;
+                }
+            }
+        };
 
+        // 遍历列表，找到合适的位置插入新元素
+        for (index, item) in self.into_iter().enumerate() {
+            let item_value = unsafe { item.as_ref().item_value.unwrap_or_default() };
+
+            if item_value > new_item_value {
+                if index == 0 {
+                    self.join(new_item);
+                } else {
+                    if let Some(mut prev) = self.prev {
+                        unsafe {
+                            prev.as_mut().join(new_item);
+                        }
+                    } else {
+                        // 处理 prev 为 None 的情况
+                        self.join(new_item);
+                    }
+                }
+
+                self.len += 1;
+                return;
+            }
+        }
+
+        // 如果没有找到合适的位置，则插入到末尾
+        self.ins_to_back(new_item);
+    }
+
+    pub fn ins_to_back(&mut self, mut new_item: NonNull<TCB>) {
+        // 如果链表为空，则直接调用 join 方法
+        if self.len == 0 {
+            self.join(new_item);
+        } else {
+            // 确保 self.prev 有值
+            let mut p_old = match self.prev {
+                Some(p) => p,
+                None => {
+                    // 如果 self.prev 为 None 且 self.len 不为 0，这可能是逻辑错误
+                    panic!("self.prev is None but self.len is not 0");
+                }
+            };
+
+            unsafe {
+                // 获取 p_old 的引用，并调用 join 方法
+                p_old.as_mut().join(new_item);
+            }
+        }
         self.len += 1;
     }
 

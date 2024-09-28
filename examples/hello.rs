@@ -1,15 +1,12 @@
 #![no_std]
 #![no_main]
 
-mod common;
-use crate::common::*;
-mod interrupts;
-mod list;
-mod mem;
-mod port;
-mod task;
-use crate::port::*;
-use crate::task::*;
+// use crate::common;
+extern crate neon;
+use neon::common::*;
+use neon::port::*;
+use neon::task::*;
+use neon::task_yield;
 extern crate alloc;
 
 use alloc_cortex_m::CortexMHeap;
@@ -51,23 +48,23 @@ unsafe fn SysTick() {
 fn test1(_arg: usize) {
     loop {
         hprintln!("task1").unwrap();
-        // let mut _a = 0;
-        // for _ in 0..10000000 {
-        //     _a += 1;
-        // }
-        // task_yield!();
-        task_delay(500);
+        let mut _a = 0;
+        for _ in 0..10000000 {
+            _a += 1;
+        }
+        task_yield!();
+        // task_delay(500);
     }
 }
 fn test2(_arg: usize) {
     loop {
         hprintln!("task2").unwrap();
-        // let mut _a = 0;
-        // for _ in 0..10000000 {
-        //     _a += 1;
-        // }
-        // task_yield!();
-        task_delay(1000);
+        let mut _a = 0;
+        for _ in 0..10000000 {
+            _a += 1;
+        }
+        task_yield!();
+        // task_delay(1000);
     }
 }
 use cortex_m::peripheral::syst::SystClkSource;

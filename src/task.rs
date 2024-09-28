@@ -1,15 +1,11 @@
 use alloc::boxed::Box;
-use alloc::ffi::NulError;
-use alloc::vec::Vec;
 use cortex_m::asm::nop;
 
-use core::ptr::{addr_of, NonNull};
-use core::{arch, option, usize};
-use cortex_m::interrupt::free;
+use core::ptr::NonNull;
+use core::usize;
 
 use core::result::Result;
 
-use crate::interrupts::{disable_interrupts, enable_interrupts};
 use crate::list::*;
 use crate::mem::mem_alloc;
 use crate::task_yield;
@@ -18,9 +14,7 @@ use core::cell::UnsafeCell;
 use core::mem;
 use cortex_m_semihosting::hprintln;
 
-use cortex_m::peripheral::SYST;
 
-use core::ptr::addr_of_mut;
 
 static mut NEXT_DELAY_TASK_UNBLOCK_TIME: UnsafeCell<Option<usize>> = UnsafeCell::new(None);
 // static mut TASK_TABLE: TaskTable = TaskTable::new();
@@ -97,8 +91,6 @@ pub struct TCB {
     pub list_handle: Option<NonNull<List>>,
     // pub link_node: LinkNode,
 }
-use crate::mem::mem_alloc_type;
-use core::ptr;
 impl TCB {
     pub fn new() -> NonNull<TCB> {
         let value = Self {
@@ -126,7 +118,7 @@ impl TCB {
         self.prev = item;
     }
 
-    unsafe fn join(&mut self, mut item: NonNull<TCB>) {
+    pub unsafe fn join(&mut self, mut item: NonNull<TCB>) {
         // self.set_next(Some(item));
         // self.set_prev(Some(item));
 
@@ -346,47 +338,47 @@ pub fn task_switch_context() {
     // hprintln!("switch {:x}", (*CURRENT_TASK.unwrap()).top_of_stack).unwrap();
 }
 
-#[allow(unused)]
-pub fn task_delay(ms_to_delay: usize) {
-    if let Some(mut task) = get_mut_current_task() {
-        // 防止溢出
-        if ms_to_delay > usize::MAX / 1000 {
-            panic!("Delay time is too large and may cause overflow");
-        }
+// #[allow(unused)]
+// pub fn task_delay(ms_to_delay: usize) {
+//     if let Some(mut task) = get_mut_current_task() {
+//         // 防止溢出
+//         if ms_to_delay > usize::MAX / 1000 {
+//             panic!("Delay time is too large and may cause overflow");
+//         }
+//         // todo
+//         let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
 
-        let tick_to_delay = ms_to_delay / 1000 * (crate::SYST_FREQ as usize);
+//         let current_tick = unsafe { TICKS_COUNT as usize };
+//         let expect_tick = current_tick.checked_add(tick_to_delay).unwrap_or_else(|| {
+//             panic!("Adding ticks to current tick caused an overflow");
+//         });
 
-        let current_tick = unsafe { TICKS_COUNT as usize };
-        let expect_tick = current_tick.checked_add(tick_to_delay).unwrap_or_else(|| {
-            panic!("Adding ticks to current tick caused an overflow");
-        });
+//         let mut task_ref = unsafe { task.as_mut() };
 
-        let mut task_ref = unsafe { task.as_mut() };
+//         task_ref.item_value = Some(expect_tick);
 
-        task_ref.item_value = Some(expect_tick);
+//         if expect_tick < current_tick {
+//             // 处理不合理的情况
+//             hprintln!("Warning: Delay time is negative, ignoring delay.");
+//             task_yield!(); // 直接调度任务
+//         } else {
+//             safely_modify_unblock_time(|unblock_time| {
+//                 *unblock_time = Some(expect_tick);
+//             });
+//             // disable_interrupts();
+//             safely_modify_ready_list(|rlist| {
+//                 rlist.del(task);
+//             });
 
-        if expect_tick < current_tick {
-            // 处理不合理的情况
-            hprintln!("Warning: Delay time is negative, ignoring delay.");
-            task_yield!(); // 直接调度任务
-        } else {
-            safely_modify_unblock_time(|unblock_time| {
-                *unblock_time = Some(expect_tick);
-            });
-            // disable_interrupts();
-            safely_modify_ready_list(|rlist| {
-                rlist.del(task);
-            });
+//             safely_modify_delay_list(|dlist| {
+//                 dlist.ins_to_first(task);
+//             });
+//             // enable_interrupts();
+//         }
+//     }
 
-            safely_modify_delay_list(|dlist| {
-                dlist.ins_to_first(task);
-            });
-            // enable_interrupts();
-        }
-    }
-
-    task_yield!(); // 修正拼写错误
-}
+//     task_yield!(); // 修正拼写错误
+// }
 static mut TICKS_COUNT: usize = 0;
 pub fn systick_task_inc() {
     unsafe {
