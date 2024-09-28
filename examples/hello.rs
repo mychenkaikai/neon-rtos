@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
 
-// use crate::common;
+
 extern crate neon;
-use neon::common::*;
-use neon::port::*;
-use neon::task::*;
+use neon::common::common::*;
+use neon::port::port::*;
+use neon::task::task::*;
 use neon::task_yield;
 extern crate alloc;
 

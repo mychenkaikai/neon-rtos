@@ -18,6 +18,11 @@ use std::path::PathBuf;
 fn main() {
     // Put `memory.x` in our output directory and ensure it's
     // on the linker search path.
+    if env::var("CARGO_CFG_TEST").is_ok() {
+        println!("Skipping build script in test environment.");
+        return;
+    }
+
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
     File::create(out.join("memory.x"))
         .unwrap()

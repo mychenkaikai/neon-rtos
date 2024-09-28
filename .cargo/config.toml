@@ -35,7 +35,3 @@ target = "thumbv7m-none-eabi"        # Cortex-M3
 # target = "thumbv8m.base-none-eabi"   # Cortex-M23
 # target = "thumbv8m.main-none-eabi"   # Cortex-M33 (no FPU)
 # target = "thumbv8m.main-none-eabihf" # Cortex-M33 (with FPU)
-
-[target.'cfg(test)']
-#rustc = "rustc-nightly"
-rustflags = ["--target", "x86_64-unknown-linux-gnu"]
