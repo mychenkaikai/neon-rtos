@@ -14,7 +14,7 @@ pub mod ptr {
     use core::ptr::NonNull;
 
     #[derive(PartialEq, Eq)]
-    pub struct Ptr<T>(*mut T);
+    pub struct Ptr<T>(NonNull<T>);
 
     impl<T> Ptr<T> {
         pub fn new(data: T) -> Self {
@@ -22,7 +22,8 @@ pub mod ptr {
         }
 
         pub fn from_non_null(ptr: NonNull<T>) -> Self {
-            Ptr(ptr.as_ptr())
+            // Ptr(ptr.as_ptr())
+            Ptr(ptr)
         }
         pub fn free_and_into_element(&mut self) -> T {
             type_free(self.0)
@@ -46,14 +47,17 @@ pub mod ptr {
 
         #[inline]
         fn deref(&self) -> &Self::Target {
-            unsafe { &*self.0 }
+            // unsafe { &*self.0 }
+            unsafe {self.0.as_ref()}
+
         }
     }
 
     impl<T> DerefMut for Ptr<T> {
         #[inline]
         fn deref_mut(&mut self) -> &mut Self::Target {
-            unsafe { &mut *self.0 }
+            // unsafe { &mut *self.0 }
+            unsafe {self.0.as_mut()}
         }
     }
 }
