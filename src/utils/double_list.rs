@@ -13,8 +13,8 @@ pub mod ptr {
     use core::ops::{Deref, DerefMut};
     use core::ptr::NonNull;
 
-    #[derive(Copy, PartialEq, Eq)]
-    pub struct Ptr<T>(NonNull<T>);
+    #[derive(PartialEq, Eq)]
+    pub struct Ptr<T>(*mut T);
 
     impl<T> Ptr<T> {
         pub fn new(data: T) -> Self {
@@ -22,12 +22,13 @@ pub mod ptr {
         }
 
         pub fn from_non_null(ptr: NonNull<T>) -> Self {
-            Ptr(ptr)
+            Ptr(ptr.as_ptr())
         }
-        pub fn free(&mut self) {
-            type_free(self.0);
+        pub fn free_and_into_element(&mut self) -> T {
+            type_free(self.0)
         }
     }
+    impl<T > Copy for Ptr<T> {}
 
     impl<T> Clone for Ptr<T> {
         fn clone(&self) -> Self {
@@ -45,14 +46,14 @@ pub mod ptr {
 
         #[inline]
         fn deref(&self) -> &Self::Target {
-            unsafe { self.0.as_ref() }
+            unsafe { &*self.0 }
         }
     }
 
     impl<T> DerefMut for Ptr<T> {
         #[inline]
         fn deref_mut(&mut self) -> &mut Self::Target {
-            unsafe { self.0.as_mut() }
+            unsafe { &mut *self.0 }
         }
     }
 }
@@ -79,7 +80,7 @@ pub mod link_node {
         pub list_handle: Option<ListPtr<T>>,
     }
 
-    impl<T> Copy for LinkNode<T> where T: Copy {}
+    // impl<T> Copy for LinkNode<T> {}
 
     impl<T> Drop for LinkList<T> {
         fn drop(&mut self) {
@@ -87,9 +88,9 @@ pub mod link_node {
                 let next = node.next.take();
 
                 // 释放节点和数据
-                node.data.as_mut().map(|data| data.free());
+                node.data.as_mut().map(|data| data.free_and_into_element());
 
-                node.free();
+                node.free_and_into_element();
 
                 self.head = next;
             }
@@ -98,7 +99,7 @@ pub mod link_node {
         }
     }
 
-    impl<T: Copy> LinkNode<T> {
+    impl<T> LinkNode<T> {
         pub fn new(data: T) -> Self {
             Self {
                 next: None,
@@ -123,13 +124,13 @@ pub mod link_node {
             self.prev = prev;
         }
 
-        fn set_element(&mut self, data: Option<ElementPtr<T>>) {
-            self.data = data;
-        }
+        // fn set_element(&mut self, data: Option<ElementPtr<T>>) {
+        //     self.data = data;
+        // }
 
-        fn into_element(&self) -> Option<ElementPtr<T>> {
-            self.data
-        }
+        // fn into_element(&self) -> Option<ElementPtr<T>> {
+        //     self.data
+        // }
 
         fn get_list(&self) -> Option<ListPtr<T>> {
             self.list_handle
@@ -163,7 +164,7 @@ pub mod link_node {
 
     // impl<T: Copy> Copy for LinkList<T> where T: Copy {}
 
-    impl<T: Copy> LinkList<T> {
+    impl<T> LinkList<T> {
         pub fn new() -> LinkList<T> {
             Self {
                 head: None,
@@ -223,9 +224,8 @@ pub mod link_node {
                 } else {
                     self.tail = None;
                 }
-                let data = *node.data.unwrap();
-                node.data.unwrap().free();
-                node.free();
+                let data = node.data.unwrap().free_and_into_element();
+                node.free_and_into_element();
                 data
             })
         }
@@ -239,21 +239,18 @@ pub mod link_node {
                 } else {
                     self.head = None;
                 }
-                let data = *node.data.unwrap();
-                node.data.unwrap().free();
-                node.free();
+                let data = node.data.unwrap().free_and_into_element();
+                node.free_and_into_element();
                 data
             })
         }
 
-        pub fn front(&self) -> Option<T> {
-            self.head
-                .and_then(|node| node.data.map(|elem_ptr| *elem_ptr))
+        pub fn front(&self) -> Option<&T> {
+            self.head.as_ref().and_then(|node| node.data.as_deref())
         }
 
-        pub fn back(&self) -> Option<T> {
-            self.tail
-                .and_then(|node| node.data.map(|elem_ptr| *elem_ptr))
+        pub fn back(&self) -> Option<&T> {
+            self.tail.as_ref().and_then(|node| node.data.as_deref())
         }
 
         pub fn len(&self) -> usize {
@@ -264,6 +261,7 @@ pub mod link_node {
 
 #[cfg(test)]
 mod tests {
+
 
     use super::link_node::*;
 
@@ -289,31 +287,31 @@ mod tests {
         // 测试 push_front
         list.push_front(10);
         assert_eq!(list.len(), 1);
-        assert_eq!(list.front(), Some(10));
-        assert_eq!(list.back(), Some(10));
+        assert_eq!(list.front(), Some(&10));
+        assert_eq!(list.back(), Some(&10));
 
         // 测试 push_back
         list.push_back(20);
         assert_eq!(list.len(), 2);
-        assert_eq!(list.front(), Some(10));
-        assert_eq!(list.back(), Some(20));
+        assert_eq!(list.front(), Some(&10));
+        assert_eq!(list.back(), Some(&20));
 
         list.push_back(30);
         assert_eq!(list.len(), 3);
-        assert_eq!(list.front(), Some(10));
-        assert_eq!(list.back(), Some(30));
+        assert_eq!(list.front(), Some(&10));
+        assert_eq!(list.back(), Some(&30));
 
         // 测试 pop_front
         assert_eq!(list.pop_front(), Some(10));
         assert_eq!(list.len(), 2);
-        assert_eq!(list.front(), Some(20));
-        assert_eq!(list.back(), Some(30));
+        assert_eq!(list.front(), Some(&20));
+        assert_eq!(list.back(), Some(&30));
 
         // 测试 pop_back
         assert_eq!(list.pop_back(), Some(30));
         assert_eq!(list.len(), 1);
-        assert_eq!(list.front(), Some(20));
-        assert_eq!(list.back(), Some(20));
+        assert_eq!(list.front(), Some(&20));
+        assert_eq!(list.back(), Some(&20));
 
         assert_eq!(list.pop_back(), Some(20));
         assert_eq!(list.len(), 0);
@@ -323,20 +321,19 @@ mod tests {
         // 额外测试：在空列表上操作
         assert_eq!(list.pop_front(), None);
         assert_eq!(list.pop_back(), None);
-
-        struct T1{
-            a:usize,
-            b:usize,
+        #[derive(PartialEq, Eq, Debug)]
+        struct T1 {
+            a: usize,
+            b: usize,
         }
-        let a = T1{a:1,b:2};
+        let a = T1 { a: 1, b: 2 };
 
-        let mut list = LinkList::<T1>::new(a);
-        list.push_back(T1{a:1,b:2});
-        list.push_back(T1{a:3,b:4});
-        list.push_back(T1{a:5,b:6});
+        let mut list = LinkList::<T1>::new();
+        list.push_back(T1 { a: 1, b: 2 });
+        list.push_back(T1 { a: 3, b: 4 });
+        list.push_back(T1 { a: 5, b: 6 });
         assert_eq!(list.len(), 3);
-        assert_eq!(list.front(), Some(T1{a:1,b:2}));
-        assert_eq!(list.back(), Some(T1{a:5,b:6}));
-
+        assert_eq!(list.front(), Some(&T1 { a: 1, b: 2 }));
+        assert_eq!(list.back(), Some(&T1 { a: 5, b: 6 }));
     }
 }

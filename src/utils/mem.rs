@@ -6,15 +6,13 @@ pub mod mem {
 
     use core::ptr::NonNull;
 
-
-    pub fn type_malloc<T>(data: T) -> NonNull<T> {
+    pub fn type_malloc<T>(data: T) -> *mut T {
         let ptr = Box::new(data);
-        NonNull::new(Box::leak(ptr)).unwrap()
+        // NonNull::new(Box::leak(ptr)).unwrap()
+        Box::into_raw(ptr)
     }
 
-    pub fn type_free<T>(ptr: NonNull<T>) {
-        unsafe {
-            drop(Box::from_raw(ptr.as_ptr())); 
-        }
+    pub fn type_free<T>(ptr: *mut T) -> T {
+        unsafe { *(Box::from_raw(ptr)) }
     }
 }
