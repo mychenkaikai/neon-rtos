@@ -13,7 +13,7 @@ pub mod ptr {
     use core::ops::{Deref, DerefMut};
     use core::ptr::NonNull;
 
-    #[derive(PartialEq, Eq)]
+    #[derive(Copy, PartialEq, Eq)]
     pub struct Ptr<T>(NonNull<T>);
 
     impl<T> Ptr<T> {
@@ -43,12 +43,14 @@ pub mod ptr {
     impl<T> Deref for Ptr<T> {
         type Target = T;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
             unsafe { self.0.as_ref() }
         }
     }
 
     impl<T> DerefMut for Ptr<T> {
+        #[inline]
         fn deref_mut(&mut self) -> &mut Self::Target {
             unsafe { self.0.as_mut() }
         }
@@ -67,7 +69,7 @@ pub mod link_node {
 
     pub type ElementPtr<T> = Ptr<T>;
     pub type NodePtr<T> = Ptr<LinkNode<T>>;
-    pub type ListPtr<T> = Ptr<LinkList<T>>;
+    pub type ListPtr<T> = NonNull<LinkList<T>>;
 
     #[derive(Clone, PartialEq, Eq)]
     pub struct LinkNode<T> {
@@ -77,23 +79,12 @@ pub mod link_node {
         pub list_handle: Option<ListPtr<T>>,
     }
 
-    // impl<T> Drop for LinkNode<T> {
-    //     fn drop(&mut self) {
-    //         // 释放数据
-    //         if let Some(data) = self.data.take() {
-    //             drop(data);
-    //         }
-    //         // 断开与其他节点的连接
-    //         self.next = None;
-    //         self.prev = None;
-    //         self.list_handle = None;
-    //     }
-    // }
+    impl<T> Copy for LinkNode<T> where T: Copy {}
 
     impl<T> Drop for LinkList<T> {
         fn drop(&mut self) {
             while let Some(mut node) = self.head.take() {
-                let next = node.next.clone();
+                let next = node.next.take();
 
                 // 释放节点和数据
                 node.data.as_mut().map(|data| data.free());
@@ -117,11 +108,11 @@ pub mod link_node {
             }
         }
         fn next(&mut self) -> Option<NodePtr<T>> {
-            self.next.clone()
+            self.next
         }
 
         fn prev(&mut self) -> Option<NodePtr<T>> {
-            self.prev.clone()
+            self.prev
         }
 
         fn set_next(&mut self, next: Option<NodePtr<T>>) {
@@ -137,27 +128,27 @@ pub mod link_node {
         }
 
         fn into_element(&self) -> Option<ElementPtr<T>> {
-            self.data.clone()
+            self.data
         }
 
         fn get_list(&self) -> Option<ListPtr<T>> {
-            self.list_handle.clone()
+            self.list_handle
         }
 
         fn insert(&mut self, mut node: NodePtr<T>) {
-            node.prev = self.prev.clone();
+            node.prev = self.prev;
 
-            node.next = self.next.clone();
+            node.next = self.next;
 
             self.prev = Some(node);
         }
 
         fn del(&mut self) {
-            if let Some(mut next) = self.next.clone() {
-                next.prev = self.prev.clone();
+            if let Some(mut next) = self.next {
+                next.prev = self.prev;
             }
-            if let Some(mut prev) = self.prev.clone() {
-                prev.next = self.next.clone();
+            if let Some(mut prev) = self.prev {
+                prev.next = self.next;
             }
             self.next = None;
             self.prev = None;
@@ -170,30 +161,32 @@ pub mod link_node {
         len: usize,
     }
 
+    // impl<T: Copy> Copy for LinkList<T> where T: Copy {}
+
     impl<T: Copy> LinkList<T> {
-        pub fn new() -> ListPtr<T> {
-            ListPtr::new(Self {
+        pub fn new() -> LinkList<T> {
+            Self {
                 head: None,
                 tail: None,
                 len: 0,
-            })
+            }
         }
         pub fn push_back(&mut self, data: T) {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
                 next: None,
-                prev: self.tail.clone(),
-                list_handle: Some(ListPtr::from_non_null(NonNull::from(self_ptr))),
+                prev: self.tail,
+                list_handle: Some(self_ptr),
             });
 
             match self.tail.take() {
                 Some(mut old_tail) => {
-                    old_tail.next = Some(new_node.clone());
+                    old_tail.next = Some(new_node);
                     self.tail = Some(new_node);
                 }
                 None => {
-                    self.head = Some(new_node.clone());
+                    self.head = Some(new_node);
                     self.tail = Some(new_node);
                 }
             }
@@ -203,18 +196,18 @@ pub mod link_node {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
-                next: self.head.clone(),
+                next: self.head,
                 prev: None,
-                list_handle: Some(ListPtr::from_non_null(self_ptr)),
+                list_handle: Some(self_ptr),
             });
 
             match self.head.take() {
                 Some(mut old_head) => {
-                    old_head.prev = Some(new_node.clone());
+                    old_head.prev = Some(new_node);
                     self.head = Some(new_node);
                 }
                 None => {
-                    self.head = Some(new_node.clone());
+                    self.head = Some(new_node);
                     self.tail = Some(new_node);
                 }
             }
@@ -224,14 +217,14 @@ pub mod link_node {
             self.head.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_head) = node.next.clone() {
+                if let Some(mut new_head) = node.next {
                     new_head.prev = None;
                     self.head = Some(new_head);
                 } else {
                     self.tail = None;
                 }
-                let data = *node.data.clone().unwrap();
-                node.data.take().unwrap().free();
+                let data = *node.data.unwrap();
+                node.data.unwrap().free();
                 node.free();
                 data
             })
@@ -240,14 +233,14 @@ pub mod link_node {
             self.tail.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_tail) = node.prev.clone() {
+                if let Some(mut new_tail) = node.prev {
                     new_tail.next = None;
                     self.tail = Some(new_tail);
                 } else {
                     self.head = None;
                 }
-                let data = *node.data.clone().unwrap();
-                node.data.take().unwrap().free();
+                let data = *node.data.unwrap();
+                node.data.unwrap().free();
                 node.free();
                 data
             })
@@ -255,14 +248,12 @@ pub mod link_node {
 
         pub fn front(&self) -> Option<T> {
             self.head
-                .clone()
-                .and_then(|node| node.data.clone().map(|elem_ptr| *elem_ptr))
+                .and_then(|node| node.data.map(|elem_ptr| *elem_ptr))
         }
 
         pub fn back(&self) -> Option<T> {
             self.tail
-                .clone()
-                .and_then(|node| node.data.clone().map(|elem_ptr| *elem_ptr))
+                .and_then(|node| node.data.map(|elem_ptr| *elem_ptr))
         }
 
         pub fn len(&self) -> usize {
@@ -332,5 +323,20 @@ mod tests {
         // 额外测试：在空列表上操作
         assert_eq!(list.pop_front(), None);
         assert_eq!(list.pop_back(), None);
+
+        struct T1{
+            a:usize,
+            b:usize,
+        }
+        let a = T1{a:1,b:2};
+
+        let mut list = LinkList::<T1>::new(a);
+        list.push_back(T1{a:1,b:2});
+        list.push_back(T1{a:3,b:4});
+        list.push_back(T1{a:5,b:6});
+        assert_eq!(list.len(), 3);
+        assert_eq!(list.front(), Some(T1{a:1,b:2}));
+        assert_eq!(list.back(), Some(T1{a:5,b:6}));
+
     }
 }
