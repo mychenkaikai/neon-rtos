@@ -14,7 +14,7 @@ pub mod ptr {
     use core::ptr::NonNull;
 
     #[derive(PartialEq, Eq)]
-    pub struct Ptr<T>(NonNull<T>);
+    pub struct Ptr<T>(pub NonNull<T>);
 
     impl<T> Ptr<T> {
         pub fn new(data: T) -> Self {
@@ -66,6 +66,7 @@ pub mod link_node {
     use super::ptr::Ptr;
     use core::clone::Clone;
     use core::marker::Copy;
+    use core::ops::Deref;
     use core::ptr::NonNull;
 
     use core::option::Option;
@@ -175,7 +176,8 @@ pub mod link_node {
                 len: 0,
             }
         }
-        pub fn push_back(&mut self, data: T) {
+        #[inline]
+        pub fn push_back(&mut self, data: T) -> NodePtr<T> {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
@@ -195,8 +197,10 @@ pub mod link_node {
                 }
             }
             self.len += 1;
+            new_node
         }
-        pub fn push_front(&mut self, data: T) {
+        #[inline]
+        pub fn push_front(&mut self, data: T) -> NodePtr<T> {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
@@ -216,7 +220,9 @@ pub mod link_node {
                 }
             }
             self.len += 1;
+            new_node
         }
+        #[inline]
         pub fn pop_front(&mut self) -> Option<T> {
             self.head.take().map(|mut node| {
                 self.len -= 1;
@@ -232,6 +238,7 @@ pub mod link_node {
                 data
             })
         }
+        #[inline]
         pub fn pop_back(&mut self) -> Option<T> {
             self.tail.take().map(|mut node| {
                 self.len -= 1;
@@ -249,11 +256,11 @@ pub mod link_node {
         }
 
         pub fn front(&self) -> Option<&T> {
-            self.head.as_ref().and_then(|node| node.data.as_deref())
+            self.head.as_deref().and_then(|node| node.data.as_deref())
         }
 
         pub fn back(&self) -> Option<&T> {
-            self.tail.as_ref().and_then(|node| node.data.as_deref())
+            self.tail.as_deref().and_then(|node| node.data.as_deref())
         }
 
         pub fn len(&self) -> usize {
@@ -267,12 +274,71 @@ pub mod link_node {
                 return false;
             }
         }
+
+        pub fn iter(&self) -> LinkListIter<T> {
+            LinkListIter {
+                next: self.head.as_ref(),
+            }
+        }
+    }
+
+    pub struct LinkListIter<'a, T> {
+        next: Option<&'a NodePtr<T>>,
+    }
+
+    impl<'a, T> IntoIterator for &'a LinkList<T> {
+        type Item = &'a T;
+        type IntoIter = LinkListIter<'a, T>;
+
+        fn into_iter(self) -> Self::IntoIter {
+            LinkListIter {
+                next: self.head.as_ref(),
+            }
+        }
+    }
+
+    impl<'a, T> Iterator for LinkListIter<'a, T> {
+        type Item = &'a T;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.next.and_then(|node| {
+                self.next = node.next.as_ref();
+                node.data.as_deref()
+            })
+        }
+    }
+
+    pub trait Linkable: Sized {
+        fn get_node_ptr(&self) -> Option<NodePtr<Self>>;
+        fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>);
+    }
+}
+
+pub mod marco {
+
+    use super::link_node::*;
+
+    #[macro_export]
+    macro_rules! linkable {
+        ($name:ident) => {
+            impl Linkable for $name {
+                fn get_node_ptr(&self) -> Option<NodePtr<Self>> {
+                    self.node_ptr
+                }
+
+                fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>) {
+                    self.node_ptr = ptr;
+                }
+            }
+        };
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
+    use core::fmt::Debug;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     static INSTANCE_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -314,16 +380,12 @@ mod tests {
 
     use super::link_node::*;
 
-    impl<T: std::fmt::Debug + Copy> std::fmt::Debug for ElementPtr<T> {
+    impl<T: std::fmt::Debug> std::fmt::Debug for ElementPtr<T> {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "NodePtr({:?})", self)
+            write!(f, "ElementPtr({:p})", self.0.as_ptr())
         }
     }
 
-    #[test]
-    fn test_node() {
-        assert_eq!(2 + 2, 4);
-    }
     #[test]
     fn test_link_list() {
         let mut list = LinkList::<usize>::new();
@@ -415,5 +477,156 @@ mod tests {
             assert_eq!(list.pop_front(), Some(i));
         }
         assert!(list.is_empty());
+    }
+
+    #[test]
+    fn test_link_list_iterator() {
+        let mut list = LinkList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+
+        let mut sum = 0;
+        for &item in &list {
+            sum += item;
+        }
+        assert_eq!(sum, 6);
+
+        // 或者使用 iter() 方法
+        let sum: i32 = list.iter().sum();
+        assert_eq!(sum, 6);
+    }
+
+    use super::link_node::ListPtr;
+    use crate::linkable;
+    use core::ptr::NonNull;
+
+    #[test]
+    fn test_linkable_macro() {
+        // 定义一个测试用的结构体
+        #[derive(PartialEq, Eq, Debug)]
+        struct TestStruct {
+            value: i32,
+            node_ptr: Option<NodePtr<Self>>,
+        }
+
+        impl<T: std::fmt::Debug> std::fmt::Debug for LinkNode<T> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_struct("LinkNode")
+                    .field("data", &self.data)
+                    .field(
+                        "next",
+                        &format_args!("{:p}", self.next.as_ref().map_or(std::ptr::null(), |n| n)),
+                    )
+                    .field(
+                        "prev",
+                        &format_args!("{:p}", self.prev.as_ref().map_or(std::ptr::null(), |n| n)),
+                    )
+                    .field(
+                        "list_handle",
+                        &format_args!(
+                            "{:p}",
+                            self.list_handle
+                                .as_ref()
+                                .map_or(std::ptr::null(), |l| l.as_ptr())
+                        ),
+                    )
+                    .finish()
+            }
+        }
+        impl<T> std::fmt::Debug for LinkList<T> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "ListPtr({:p})", self)
+            }
+        }
+
+        // 使用宏为 TestStruct 实现 Linkable
+        linkable!(TestStruct);
+
+        // 创建一个 LinkList<TestStruct>
+        let mut list = LinkList::<TestStruct>::new();
+
+        // 添加一些 TestStruct 实例到列表中
+        let node = list.push_back(TestStruct {
+            value: 1,
+            node_ptr: None,
+        });
+
+        if let Some(mut element) = node.data {
+            element.set_node_ptr(Some(node));
+        }
+        let node = list.push_back(TestStruct {
+            value: 2,
+            node_ptr: None,
+        });
+        if let Some(mut element) = node.data {
+            element.set_node_ptr(Some(node));
+        }
+        let node = list.push_back(TestStruct {
+            value: 3,
+            node_ptr: None,
+        });
+        if let Some(mut element) = node.data {
+            element.set_node_ptr(Some(node));
+        }
+
+        // 验证列表长度
+        assert_eq!(list.len(), 3);
+
+        // 检查每个元素的 node_ptr
+        for (index, item) in list.iter().enumerate() {
+            println!(
+                "Item {}: value = {}, node_ptr = {:?}",
+                index,
+                item.value,
+                item.get_node_ptr()
+            );
+            assert!(
+                item.get_node_ptr().is_some(),
+                "Item {} should have a node_ptr",
+                index
+            );
+        }
+
+        if let Some(first) = list.front() {
+            let node_ptr = first.get_node_ptr();
+            assert!(node_ptr.is_some(), "First element should have a node_ptr");
+
+            if let Some(node) = node_ptr {
+                if let Some(next_node) = node.next {
+                    assert_eq!(next_node.data.as_ref().unwrap().value, 2);
+                } else {
+                    panic!("Next node should exist");
+                }
+            }
+        } else {
+            panic!("List should not be empty");
+        }
+
+        if let Some(first) = list.back() {
+            let node_ptr = first.get_node_ptr();
+            assert!(node_ptr.is_some(), "First element should have a node_ptr");
+
+            if let Some(node) = node_ptr {
+                if let Some(_) = node.next {
+                    panic!("Next node should  not exist");
+                }
+            }
+        } else {
+            panic!("List should not be empty");
+        }
+
+        // 测试移除元素
+        let removed = list.pop_front();
+        assert_eq!(removed.map(|ts| ts.value), Some(1));
+        assert_eq!(list.len(), 2);
+
+        // 再次检查剩余元素
+        let values: Vec<i32> = list.iter().map(|ts| ts.value).collect();
+        assert_eq!(values, vec![2, 3]);
+
+        // 清空列表
+        while list.pop_front().is_some() {}
+        assert_eq!(list.len(), 0);
     }
 }
