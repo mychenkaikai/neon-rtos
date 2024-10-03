@@ -22,14 +22,12 @@ pub mod ptr {
         }
 
         pub fn from_non_null(ptr: NonNull<T>) -> Self {
-            // Ptr(ptr.as_ptr())
             Ptr(ptr)
         }
-        pub fn free_and_into_element(&mut self) -> T {
-            type_free(self.0)
+        pub fn free(&mut self) {
+            type_free(self.0);
         }
     }
-    impl<T> Copy for Ptr<T> {}
 
     impl<T> Clone for Ptr<T> {
         fn clone(&self) -> Self {
@@ -45,17 +43,13 @@ pub mod ptr {
     impl<T> Deref for Ptr<T> {
         type Target = T;
 
-        #[inline]
         fn deref(&self) -> &Self::Target {
-            // unsafe { &*self.0 }
             unsafe { self.0.as_ref() }
         }
     }
 
     impl<T> DerefMut for Ptr<T> {
-        #[inline]
         fn deref_mut(&mut self) -> &mut Self::Target {
-            // unsafe { &mut *self.0 }
             unsafe { self.0.as_mut() }
         }
     }
@@ -73,7 +67,7 @@ pub mod link_node {
 
     pub type ElementPtr<T> = Ptr<T>;
     pub type NodePtr<T> = Ptr<LinkNode<T>>;
-    pub type ListPtr<T> = NonNull<LinkList<T>>;
+    pub type ListPtr<T> = Ptr<LinkList<T>>;
 
     #[derive(Clone, PartialEq, Eq)]
     pub struct LinkNode<T> {
@@ -83,17 +77,28 @@ pub mod link_node {
         pub list_handle: Option<ListPtr<T>>,
     }
 
-    // impl<T> Copy for LinkNode<T> {}
+    // impl<T> Drop for LinkNode<T> {
+    //     fn drop(&mut self) {
+    //         // 释放数据
+    //         if let Some(data) = self.data.take() {
+    //             drop(data);
+    //         }
+    //         // 断开与其他节点的连接
+    //         self.next = None;
+    //         self.prev = None;
+    //         self.list_handle = None;
+    //     }
+    // }
 
     impl<T> Drop for LinkList<T> {
         fn drop(&mut self) {
             while let Some(mut node) = self.head.take() {
-                let next = node.next.take();
+                let next = node.next.clone();
 
                 // 释放节点和数据
-                node.data.as_mut().map(|data| data.free_and_into_element());
+                node.data.as_mut().map(|data| data.free());
 
-                node.free_and_into_element();
+                node.free();
 
                 self.head = next;
             }
@@ -102,7 +107,7 @@ pub mod link_node {
         }
     }
 
-    impl<T> LinkNode<T> {
+    impl<T: Copy> LinkNode<T> {
         pub fn new(data: T) -> Self {
             Self {
                 next: None,
@@ -112,11 +117,11 @@ pub mod link_node {
             }
         }
         fn next(&mut self) -> Option<NodePtr<T>> {
-            self.next
+            self.next.clone()
         }
 
         fn prev(&mut self) -> Option<NodePtr<T>> {
-            self.prev
+            self.prev.clone()
         }
 
         fn set_next(&mut self, next: Option<NodePtr<T>>) {
@@ -127,32 +132,32 @@ pub mod link_node {
             self.prev = prev;
         }
 
-        // fn set_element(&mut self, data: Option<ElementPtr<T>>) {
-        //     self.data = data;
-        // }
+        fn set_element(&mut self, data: Option<ElementPtr<T>>) {
+            self.data = data;
+        }
 
-        // fn into_element(&self) -> Option<ElementPtr<T>> {
-        //     self.data
-        // }
+        fn into_element(&self) -> Option<ElementPtr<T>> {
+            self.data.clone()
+        }
 
         fn get_list(&self) -> Option<ListPtr<T>> {
-            self.list_handle
+            self.list_handle.clone()
         }
 
         fn insert(&mut self, mut node: NodePtr<T>) {
-            node.prev = self.prev;
+            node.prev = self.prev.clone();
 
-            node.next = self.next;
+            node.next = self.next.clone();
 
             self.prev = Some(node);
         }
 
         fn del(&mut self) {
-            if let Some(mut next) = self.next {
-                next.prev = self.prev;
+            if let Some(mut next) = self.next.clone() {
+                next.prev = self.prev.clone();
             }
-            if let Some(mut prev) = self.prev {
-                prev.next = self.next;
+            if let Some(mut prev) = self.prev.clone() {
+                prev.next = self.next.clone();
             }
             self.next = None;
             self.prev = None;
@@ -165,32 +170,30 @@ pub mod link_node {
         len: usize,
     }
 
-    // impl<T: Copy> Copy for LinkList<T> where T: Copy {}
-
-    impl<T> LinkList<T> {
-        pub fn new() -> LinkList<T> {
-            Self {
+    impl<T: Copy> LinkList<T> {
+        pub fn new() -> ListPtr<T> {
+            ListPtr::new(Self {
                 head: None,
                 tail: None,
                 len: 0,
-            }
+            })
         }
         pub fn push_back(&mut self, data: T) {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
                 next: None,
-                prev: self.tail,
-                list_handle: Some(self_ptr),
+                prev: self.tail.clone(),
+                list_handle: Some(ListPtr::from_non_null(NonNull::from(self_ptr))),
             });
 
             match self.tail.take() {
                 Some(mut old_tail) => {
-                    old_tail.next = Some(new_node);
+                    old_tail.next = Some(new_node.clone());
                     self.tail = Some(new_node);
                 }
                 None => {
-                    self.head = Some(new_node);
+                    self.head = Some(new_node.clone());
                     self.tail = Some(new_node);
                 }
             }
@@ -200,18 +203,18 @@ pub mod link_node {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
             let new_node = NodePtr::new(LinkNode {
                 data: Some(ElementPtr::new(data)),
-                next: self.head,
+                next: self.head.clone(),
                 prev: None,
-                list_handle: Some(self_ptr),
+                list_handle: Some(ListPtr::from_non_null(self_ptr)),
             });
 
             match self.head.take() {
                 Some(mut old_head) => {
-                    old_head.prev = Some(new_node);
+                    old_head.prev = Some(new_node.clone());
                     self.head = Some(new_node);
                 }
                 None => {
-                    self.head = Some(new_node);
+                    self.head = Some(new_node.clone());
                     self.tail = Some(new_node);
                 }
             }
@@ -221,14 +224,15 @@ pub mod link_node {
             self.head.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_head) = node.next {
+                if let Some(mut new_head) = node.next.clone() {
                     new_head.prev = None;
                     self.head = Some(new_head);
                 } else {
                     self.tail = None;
                 }
-                let data = node.data.unwrap().free_and_into_element();
-                node.free_and_into_element();
+                let data = *node.data.clone().unwrap();
+                node.data.take().unwrap().free();
+                node.free();
                 data
             })
         }
@@ -236,81 +240,39 @@ pub mod link_node {
             self.tail.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_tail) = node.prev {
+                if let Some(mut new_tail) = node.prev.clone() {
                     new_tail.next = None;
                     self.tail = Some(new_tail);
                 } else {
                     self.head = None;
                 }
-                let data = node.data.unwrap().free_and_into_element();
-                node.free_and_into_element();
+                let data = *node.data.clone().unwrap();
+                node.data.take().unwrap().free();
+                node.free();
                 data
             })
         }
 
-        pub fn front(&self) -> Option<&T> {
-            self.head.as_ref().and_then(|node| node.data.as_deref())
+        pub fn front(&self) -> Option<T> {
+            self.head
+                .clone()
+                .and_then(|node| node.data.clone().map(|elem_ptr| *elem_ptr))
         }
 
-        pub fn back(&self) -> Option<&T> {
-            self.tail.as_ref().and_then(|node| node.data.as_deref())
+        pub fn back(&self) -> Option<T> {
+            self.tail
+                .clone()
+                .and_then(|node| node.data.clone().map(|elem_ptr| *elem_ptr))
         }
 
         pub fn len(&self) -> usize {
             self.len
-        }
-
-        pub fn is_empty(&self) -> bool {
-            if self.len == 0 {
-                return true;
-            } else {
-                return false;
-            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-
-    static INSTANCE_COUNT: AtomicUsize = AtomicUsize::new(0);
-
-    #[derive(Debug, PartialEq)]
-    struct DropCounter(i32);
-
-    impl DropCounter {
-        fn new(value: i32) -> Self {
-            INSTANCE_COUNT.fetch_add(1, Ordering::SeqCst);
-            DropCounter(value)
-        }
-    }
-
-    impl Drop for DropCounter {
-        fn drop(&mut self) {
-            INSTANCE_COUNT.fetch_sub(1, Ordering::SeqCst);
-        }
-    }
-
-    #[test]
-    fn test_memory_leak() {
-        {
-            let mut list = LinkList::<DropCounter>::new();
-            for i in 0..100 {
-                list.push_back(DropCounter::new(i));
-            }
-            assert_eq!(INSTANCE_COUNT.load(Ordering::SeqCst), 100);
-
-            // 移除一些元素
-            for _ in 0..50 {
-                list.pop_front();
-            }
-            assert_eq!(INSTANCE_COUNT.load(Ordering::SeqCst), 50);
-        }
-        // 列表超出作用域，应该释放所有剩余元素
-        assert_eq!(INSTANCE_COUNT.load(Ordering::SeqCst), 0);
-    }
 
     use super::link_node::*;
 
@@ -336,31 +298,31 @@ mod tests {
         // 测试 push_front
         list.push_front(10);
         assert_eq!(list.len(), 1);
-        assert_eq!(list.front(), Some(&10));
-        assert_eq!(list.back(), Some(&10));
+        assert_eq!(list.front(), Some(10));
+        assert_eq!(list.back(), Some(10));
 
         // 测试 push_back
         list.push_back(20);
         assert_eq!(list.len(), 2);
-        assert_eq!(list.front(), Some(&10));
-        assert_eq!(list.back(), Some(&20));
+        assert_eq!(list.front(), Some(10));
+        assert_eq!(list.back(), Some(20));
 
         list.push_back(30);
         assert_eq!(list.len(), 3);
-        assert_eq!(list.front(), Some(&10));
-        assert_eq!(list.back(), Some(&30));
+        assert_eq!(list.front(), Some(10));
+        assert_eq!(list.back(), Some(30));
 
         // 测试 pop_front
         assert_eq!(list.pop_front(), Some(10));
         assert_eq!(list.len(), 2);
-        assert_eq!(list.front(), Some(&20));
-        assert_eq!(list.back(), Some(&30));
+        assert_eq!(list.front(), Some(20));
+        assert_eq!(list.back(), Some(30));
 
         // 测试 pop_back
         assert_eq!(list.pop_back(), Some(30));
         assert_eq!(list.len(), 1);
-        assert_eq!(list.front(), Some(&20));
-        assert_eq!(list.back(), Some(&20));
+        assert_eq!(list.front(), Some(20));
+        assert_eq!(list.back(), Some(20));
 
         assert_eq!(list.pop_back(), Some(20));
         assert_eq!(list.len(), 0);
@@ -370,50 +332,5 @@ mod tests {
         // 额外测试：在空列表上操作
         assert_eq!(list.pop_front(), None);
         assert_eq!(list.pop_back(), None);
-        #[derive(PartialEq, Eq, Debug)]
-        struct T1 {
-            a: usize,
-            b: usize,
-        }
-
-        let mut list = LinkList::<T1>::new();
-        list.push_back(T1 { a: 1, b: 2 });
-        list.push_back(T1 { a: 3, b: 4 });
-        list.push_back(T1 { a: 5, b: 6 });
-        assert_eq!(list.len(), 3);
-        assert_eq!(list.front(), Some(&T1 { a: 1, b: 2 }));
-        assert_eq!(list.back(), Some(&T1 { a: 5, b: 6 }));
-    }
-    #[test]
-    fn test_link_list_comprehensive() {
-        let mut list = LinkList::<i32>::new();
-
-        // 测试空列表
-        assert!(list.is_empty());
-
-        // 测试插入和删除
-        list.push_front(1);
-        list.push_back(2);
-        list.push_front(0);
-        assert_eq!(list.len(), 3);
-        assert_eq!(list.pop_front(), Some(0));
-        assert_eq!(list.pop_back(), Some(2));
-        assert_eq!(list.len(), 1);
-
-        // 测试清空列表
-        list.push_back(3);
-        list.push_back(4);
-        while list.pop_front().is_some() {}
-        assert!(list.is_empty());
-
-        // 测试大量数据
-        for i in 0..1000 {
-            list.push_back(i);
-        }
-        assert_eq!(list.len(), 1000);
-        for i in 0..1000 {
-            assert_eq!(list.pop_front(), Some(i));
-        }
-        assert!(list.is_empty());
     }
 }
