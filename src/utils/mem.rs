@@ -1,6 +1,6 @@
 pub mod mem {
     #[cfg(not(test))]
-    use alloc::Box;
+    use alloc::boxed::Box;
     #[cfg(test)]
     use std::boxed::Box;
 

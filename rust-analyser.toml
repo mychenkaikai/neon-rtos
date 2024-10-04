@@ -1,0 +1,13 @@
+ [rust-analyzer]
+   cargo.loadOutDirsFromCheck = true
+   procMacro.enable = true
+   cargo.features = ["test"]
+   cargo.target = "x86_64-unknown-linux-gnu"
+   cargo.allFeatures = true
+   cargo.cfgs = ["test"]
+   checkOnSave.enable = true
+   checkOnSave.command = "check"
+   checkOnSave.extraArgs = ["--tests"]
+   diagnostics.disabled = ["unresolved-proc-macro"]
+   cargo.extraEnv = { "RUST_BACKTRACE" = "1", "CARGO_CFG_TEST" = "true" }
+   rustc.extraEnv = { "RUSTFLAGS" = "--cfg test" }

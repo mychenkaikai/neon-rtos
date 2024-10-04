@@ -103,4 +103,8 @@ pub mod port {
             );
         }
     }
+
+    fn port_idle_task() {
+        cortex_m::asm::wfi();
+    }
 }

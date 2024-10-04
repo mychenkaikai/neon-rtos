@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_add2() {
-        assert_eq!(2+2, 5);
+        assert_eq!(2+2, 4);
     }
 
 }

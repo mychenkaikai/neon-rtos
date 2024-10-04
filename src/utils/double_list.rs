@@ -74,7 +74,7 @@ pub mod link_node {
 
     pub type ElementPtr<T> = Ptr<T>;
     pub type NodePtr<T> = Ptr<LinkNode<T>>;
-    pub type ListPtr<T> = NonNull<LinkList<T>>;
+    pub type ListPtr<T> = Ptr<LinkList<T>>;
 
     #[derive(Clone, PartialEq, Eq)]
     pub struct LinkNode<T> {
@@ -161,15 +161,15 @@ pub mod link_node {
     }
     #[derive(Clone, PartialEq, Eq)]
     pub struct LinkList<T> {
-        tail: Option<NodePtr<T>>,
-        head: Option<NodePtr<T>>,
+        pub tail: Option<NodePtr<T>>,
+        pub head: Option<NodePtr<T>>,
         len: usize,
     }
 
     // impl<T: Copy> Copy for LinkList<T> where T: Copy {}
 
     impl<T> LinkList<T> {
-        pub fn new() -> LinkList<T> {
+        pub const fn new() -> LinkList<T> {
             Self {
                 head: None,
                 tail: None,
@@ -183,7 +183,7 @@ pub mod link_node {
                 data: Some(ElementPtr::new(data)),
                 next: None,
                 prev: self.tail,
-                list_handle: Some(self_ptr),
+                list_handle: Some(ListPtr::from_non_null(self_ptr)),
             });
 
             match self.tail.take() {
@@ -206,7 +206,7 @@ pub mod link_node {
                 data: Some(ElementPtr::new(data)),
                 next: self.head,
                 prev: None,
-                list_handle: Some(self_ptr),
+                list_handle: Some(ListPtr::from_non_null(self_ptr)),
             });
 
             match self.head.take() {
@@ -261,6 +261,43 @@ pub mod link_node {
 
         pub fn back(&self) -> Option<&T> {
             self.tail.as_deref().and_then(|node| node.data.as_deref())
+        }
+
+        pub fn detach(&mut self, mut node: NodePtr<T>) -> NodePtr<T> {
+            if let Some(mut prev) = node.prev {
+                prev.next = node.next;
+            } else {
+                self.head = node.next;
+            }
+    
+            if let Some(mut next) = node.next {
+                next.prev = node.prev;
+            } else {
+                self.tail = node.prev;
+            }
+    
+            self.len -= 1;
+    
+            // 重置节点的前后指针
+            node.prev = None;
+            node.next = None;
+    
+            node
+        }
+    
+        // 将已存在的节点添加到列表末尾
+        pub fn attach_back(&mut self, mut node: NodePtr<T>) {
+            node.prev = self.tail;
+            node.next = None;
+    
+            if let Some(mut tail) = self.tail {
+                tail.next = Some(node);
+            } else {
+                self.head = Some(node);
+            }
+    
+            self.tail = Some(node);
+            self.len += 1;
         }
 
         pub fn len(&self) -> usize {
@@ -528,7 +565,7 @@ mod tests {
                             "{:p}",
                             self.list_handle
                                 .as_ref()
-                                .map_or(std::ptr::null(), |l| l.as_ptr())
+                                .map_or(std::ptr::null(), |l| l.0.as_ptr())
                         ),
                     )
                     .finish()
