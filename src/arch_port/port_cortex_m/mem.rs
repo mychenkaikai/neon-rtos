@@ -1,21 +1,25 @@
-pub mod mem {
+use alloc::boxed::Box;
 
-    use crate::arch_port::port::mem::*;
+extern crate alloc;
 
-    use core::alloc::Layout;
+use super::MemOperations;
+use alloc::alloc::*;
+use core::ptr::NonNull;
+use core::mem::size_of;
 
-    use core::ptr::NonNull;
+pub struct ArchMem;
 
-    pub fn type_malloc<T>(data: T) -> NonNull<T> {
+impl MemOperations for ArchMem {
+    fn type_malloc<T>(data: T) -> NonNull<T> {
         let ptr = Box::new(data);
         NonNull::new(Box::leak(ptr)).unwrap()
     }
 
-    pub fn type_free<T>(ptr: NonNull<T>) -> T {
+    fn type_free<T>(ptr: NonNull<T>) -> T {
         unsafe { *Box::from_raw(ptr.as_ptr()) }
     }
 
-    pub fn mem_alloc(size: usize) -> *mut u8 {
+    fn mem_alloc(size: usize) -> *mut u8 {
         let metadata_size = size_of::<usize>();
         let total_size = size + metadata_size;
 
@@ -33,7 +37,7 @@ pub mod mem {
         unsafe { memory.add(metadata_size) }
     }
 
-    pub fn mem_free(ptr: *mut u8) {
+    fn mem_free(ptr: *mut u8) {
         let metadata_size = size_of::<usize>();
         let original_ptr = unsafe { ptr.sub(metadata_size) };
 

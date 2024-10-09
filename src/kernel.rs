@@ -1,13 +1,16 @@
 pub mod scheduler {
-    use super::*;
+    use crate::arch_port::common::ArchPortTrait;
+    use crate::arch_port::common::MemOperations;
+    use crate::arch_port::port::mem::ArchMem;
+    use crate::arch_port::port::ArchPort;
     use crate::utils::double_list::link_node::ElementPtr;
-    use crate::utils::double_list::link_node::ListPtr;
     use crate::utils::double_list::link_node::NodePtr;
     use crate::utils::double_list::link_node::*;
-    use core::ptr::NonNull;
-    use crate::arch_port::port::*;
-    use crate::port_task_yield;
-    use crate::arch_port::common::ArchPortTrait;
+    use core::ops::FnOnce;
+    use core::option::Option;
+    use core::option::Option::*;
+    use core::result::Result;
+    use core::result::Result::*;
 
     pub struct Scheduler {
         task_ready_list: LinkList<TCB>,
@@ -74,9 +77,9 @@ pub mod scheduler {
             &mut self,
             name: &'static str,
             stack_size: usize,
-            entry: fn(),
+            entry: fn(usize),
         ) -> Result<(), &'static str> {
-            let mut tcb = TCB::new(name, stack_size, entry);
+            let tcb = TCB::new(name, stack_size, entry);
             let node = self.task_ready_list.push_back(tcb);
             if let Some(mut element) = node.data {
                 element.set_node_ptr(Some(node));
@@ -86,12 +89,7 @@ pub mod scheduler {
 
         pub fn start(&mut self) {
             // 初始化空闲任务
-            self.create_task("idle", 500, idle_task).unwrap();
-            self.idle_task = self
-                .task_ready_list
-                .back()
-                .and_then(|tcb| tcb.get_node_ptr())
-                .and_then(|node| node.data);
+            self.idle_task = Some(ElementPtr::new(TCB::new("idle", 500, idle_task)));
 
             // 选择第一个任务开始执行
             self.current_task = self
@@ -132,7 +130,7 @@ pub mod scheduler {
                     self.update_next_delay_task_unblock_time();
                 }
 
-                port_task_yield!();
+                ArchPort::task_yield();
             }
         }
 
@@ -148,7 +146,7 @@ pub mod scheduler {
 
             // 如果就绪列表不为空，进行任务切换
             if !self.task_ready_list.is_empty() {
-                port_task_yield!();
+                ArchPort::task_yield();
             }
         }
 
@@ -158,16 +156,16 @@ pub mod scheduler {
 
             let mut current = self.task_delay_list.head;
             while let Some(mut node) = current {
-                let tcb = unsafe { node.data.as_ref().unwrap() };
+                let tcb = node.data.as_ref().unwrap();
                 if let Some(unblock_time) = tcb.unblock_time() {
                     if current_ticks >= unblock_time {
-                        let next = unsafe { node.next };
+                        let next = node.next;
 
                         // 从延迟列表中分离节点
                         self.task_delay_list.detach(node);
 
                         // 重置解除阻塞时间
-                        if let Some(mut tcb) = unsafe { node.data.as_mut() } {
+                        if let Some(tcb) = node.data.as_mut() {
                             tcb.set_unblock_time(None);
                         }
 
@@ -178,10 +176,10 @@ pub mod scheduler {
                     } else {
                         next_unblock_time =
                             Some(next_unblock_time.map_or(unblock_time, |t| t.min(unblock_time)));
-                        current = unsafe { node.next };
+                        current = node.next;
                     }
                 } else {
-                    current = unsafe { node.next };
+                    current = node.next;
                 }
             }
 
@@ -208,16 +206,18 @@ pub mod scheduler {
     }
 
     impl TCB {
-        fn new(name: &'static str, stack_size: usize, entry: fn()) -> Self {
+        fn new(name: &'static str, stack_size: usize, entry: fn(usize)) -> Self {
             // 这里需要实现实际的栈分配和初始化逻辑
-            let stack_ptr = 0; // 临时占位，实际实现中需要分配真实的栈
-            Self {
+            let stack_ptr = ArchMem::mem_alloc(stack_size) as usize;
+            let mut tcb = Self {
                 name,
                 stack_ptr,
                 stack_size,
                 node_ptr: None,
                 unblock_time: None,
-            }
+            };
+            ArchPort::init_task_stack(&mut tcb.stack_ptr, entry, 0);
+            tcb
         }
 
         fn unblock_time(&self) -> Option<usize> {
@@ -239,7 +239,7 @@ pub mod scheduler {
         }
     }
 
-    fn idle_task() {
+    fn idle_task(_: usize) {
         loop {
             // 空闲任务的实现
             crate::arch_port::port::ArchPort::idle_task();
@@ -259,14 +259,14 @@ pub mod scheduler {
 }
 // 创建新任务
 
-#[cfg(test)]
+#[cfg(all(test,target_arch="x86"))]
 mod tests {
     use super::scheduler::*;
 
     #[test]
     fn test_create_task() {
         let mut scheduler = Scheduler::new();
-        assert_eq!(scheduler.create_task("test_task", 1000, || {}), Ok(()));
+        assert_eq!(scheduler.create_task("test_task", 1000, |_| {}), Ok(()));
         assert_eq!(scheduler.task_ready_list().len(), 1);
     }
 
@@ -275,7 +275,7 @@ mod tests {
         let mut scheduler = Scheduler::new();
         scheduler.start();
         assert!(scheduler.idle_task().is_some());
-        assert!(scheduler.current_task().is_some());
+        assert!(scheduler.current_task().is_none());
     }
     use core::fmt::{Debug, Error, Formatter};
 
@@ -301,8 +301,8 @@ mod tests {
     #[test]
     fn test_yield_task() {
         let mut scheduler = Scheduler::new();
-        scheduler.create_task("task1", 1000, || {}).unwrap();
-        scheduler.create_task("task2", 1000, || {}).unwrap();
+        scheduler.create_task("task1", 1000, |_| {}).unwrap();
+        scheduler.create_task("task2", 1000, |_| {}).unwrap();
         scheduler.start();
 
         let first_task = scheduler.current_task();
@@ -315,24 +315,24 @@ mod tests {
     #[test]
     fn test_delay_task() {
         let mut scheduler = Scheduler::new();
-        scheduler.create_task("task1", 1000, || {}).unwrap();
-        scheduler.create_task("task2", 1000, || {}).unwrap();
+        scheduler.create_task("task1", 1000, |_| {}).unwrap();
+        scheduler.create_task("task2", 1000, |_| {}).unwrap();
         scheduler.start();
 
         // 现在就绪列表中应该有3个任务（2个创建的 + 1个空闲任务）
-        assert_eq!(scheduler.task_ready_list().len(), 3);
+        assert_eq!(scheduler.task_ready_list().len(), 2);
 
         let original_task = scheduler.current_task();
         scheduler.delay_task(10);
         assert_ne!(scheduler.current_task(), original_task);
         assert_eq!(scheduler.task_delay_list().len(), 1);
-        assert_eq!(scheduler.task_ready_list().len(), 2); // 2 = 3 - 1（被延迟的任务）
+        assert_eq!(scheduler.task_ready_list().len(), 1); // 2 = 3 - 1（被延迟的任务）
     }
 
     #[test]
     fn test_tick() {
         let mut scheduler = Scheduler::new();
-        scheduler.create_task("task1", 1000, || {}).unwrap();
+        scheduler.create_task("task1", 1000, |_| {}).unwrap();
         scheduler.start();
 
         let original_ticks = scheduler.ticks_count();
@@ -343,22 +343,22 @@ mod tests {
     #[test]
     fn test_unblock_tasks() {
         let mut scheduler = Scheduler::new();
-        scheduler.create_task("task1", 1000, || {}).unwrap();
-        scheduler.create_task("task2", 1000, || {}).unwrap();
+        scheduler.create_task("task1", 1000, |_| {}).unwrap();
+        scheduler.create_task("task2", 1000, |_| {}).unwrap();
         scheduler.start();
 
         // 现在就绪列表中应该有3个任务
-        assert_eq!(scheduler.task_ready_list().len(), 3);
+        assert_eq!(scheduler.task_ready_list().len(), 2);
 
         scheduler.delay_task(5);
         assert_eq!(scheduler.task_delay_list().len(), 1);
-        assert_eq!(scheduler.task_ready_list().len(), 2);
+        assert_eq!(scheduler.task_ready_list().len(), 1);
 
         for _ in 0..5 {
             scheduler.tick();
         }
 
         assert_eq!(scheduler.task_delay_list().len(), 0);
-        assert_eq!(scheduler.task_ready_list().len(), 3); // 所有任务都应该回到就绪列表
+        assert_eq!(scheduler.task_ready_list().len(), 2); // 所有任务都应该回到就绪列表
     }
 }

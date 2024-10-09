@@ -8,13 +8,13 @@ pub mod common;
 // #[cfg(not(test))]
 pub mod interrupts;
 // #[cfg(not(test))]
-pub mod list;
+// pub mod list;
 // #[cfg(not(test))]
-pub mod mem;
+// pub mod mem;
 // #[cfg(not(test))]
-pub mod port;
+// pub mod port;
 // #[cfg(not(test))]
-pub mod task;
+// pub mod task;
 
 pub mod utils;
 
@@ -22,6 +22,4 @@ pub mod kernel;
 
 pub mod arch_port;
 
-#[cfg(not(test))]
-extern crate alloc;
 

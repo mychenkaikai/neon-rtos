@@ -6,8 +6,10 @@
 // type ListType = ();
 
 pub mod ptr {
-    use super::super::mem::mem::type_free;
-    use super::super::mem::mem::type_malloc;
+    use crate::arch_port::common::MemOperations;
+    use crate::arch_port::port::*;
+    use crate::arch_port::port::mem::ArchMem;
+    // use crate::arch_port::port::;
     use core::clone::Clone;
     use core::marker::Copy;
     use core::ops::{Deref, DerefMut};
@@ -18,7 +20,7 @@ pub mod ptr {
 
     impl<T> Ptr<T> {
         pub fn new(data: T) -> Self {
-            Ptr(type_malloc(data))
+            Ptr(ArchMem::type_malloc(data))
         }
 
         pub fn from_non_null(ptr: NonNull<T>) -> Self {
@@ -26,7 +28,7 @@ pub mod ptr {
             Ptr(ptr)
         }
         pub fn free_and_into_element(&mut self) -> T {
-            type_free(self.0)
+            ArchMem::type_free(self.0)
         }
     }
     impl<T> Copy for Ptr<T> {}
@@ -36,6 +38,13 @@ pub mod ptr {
             Ptr(self.0)
         }
     }
+
+    impl<T> Ptr<T> {
+        pub fn as_ptr(&self) -> *mut T {
+            self.0.as_ptr()
+        }
+    }
+
     // impl<T> Drop for Ptr<T> {
     //     fn drop(&mut self) {
     //         type_free(self.0);
@@ -371,12 +380,12 @@ pub mod marco {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod tests {
 
     use super::*;
     use core::fmt::Debug;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
     static INSTANCE_COUNT: AtomicUsize = AtomicUsize::new(0);
 
@@ -417,8 +426,8 @@ mod tests {
 
     use super::link_node::*;
 
-    impl<T: std::fmt::Debug> std::fmt::Debug for ElementPtr<T> {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    impl<T: core::fmt::Debug> core::fmt::Debug for ElementPtr<T> {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
             write!(f, "ElementPtr({:p})", self.0.as_ptr())
         }
     }

@@ -18,8 +18,9 @@ use std::path::PathBuf;
 fn main() {
     // Put `memory.x` in our output directory and ensure it's
     // on the linker search path.
-    if env::var("CARGO_CFG_TEST").is_ok() {
-        println!("Skipping build script in test environment.");
+    let target = env::var("TARGET").unwrap();
+    if target == "x86_64-unknown-linux-gnu" {
+        println!("Skipping memory.x for x86_64 target");
         return;
     }
 

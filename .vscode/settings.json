@@ -1,4 +1,18 @@
 {
     "cortex-debug.variableUseNaturalFormat": false,
-    "editor.fontFamily": "'FiraCode Nerd Font Mono','Fira Code Retina','Fira Code','FiraCode Nerd Font'"
+    "editor.fontFamily": "'FiraCode Nerd Font Mono','Fira Code Retina','Fira Code','FiraCode Nerd Font'",
+    "rust-analyzer.cargo.loadOutDirsFromCheck": true,
+    "rust-analyzer.procMacro.enable": true,
+    // "rust-analyzer.cargo.target": "x86_64-unknown-linux-gnu",
+    "rust-analyzer.cargo.target": "thumbv7m-none-eabi",
+    "rust-analyzer.cargo.allFeatures": true,
+    "rust-analyzer.checkOnSave.enable": true,
+    "rust-analyzer.checkOnSave.command": "check",
+    "rust-analyzer.diagnostics.disabled": ["unresolved-proc-macro"],
+    "rust-analyzer.cargo.features": [],
+    "rust-analyzer.checkOnSave.allTargets": false,
+    "rust-analyzer.cargo.extraEnv": {
+        "RUST_BACKTRACE": "1",
+        "RUSTUP_TOOLCHAIN": "stable"
+    }
 }
