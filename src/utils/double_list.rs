@@ -6,9 +6,9 @@
 // type ListType = ();
 
 pub mod ptr {
-    use crate::arch_port::common::MemOperations;
-    use crate::arch_port::port::*;
-    use crate::arch_port::port::mem::ArchMem;
+    use crate::arch::common::MemOperations;
+    use crate::arch::port::*;
+    use crate::arch::port::mem::ArchMem;
     // use crate::arch_port::port::;
     use core::clone::Clone;
     use core::marker::Copy;

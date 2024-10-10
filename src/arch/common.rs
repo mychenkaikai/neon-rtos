@@ -58,7 +58,7 @@ mod tests {
     use super::*;
 
     // 创建一个模拟实现来测试 trait
-    use crate::arch_port::port::mem::ArchMem;
+    use crate::arch::port::mem::ArchMem;
 
     #[test]
     fn test_mem_alloc_and_free() {

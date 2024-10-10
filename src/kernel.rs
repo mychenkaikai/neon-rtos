@@ -1,11 +1,13 @@
 pub mod scheduler {
-    use crate::arch_port::common::ArchPortTrait;
-    use crate::arch_port::common::MemOperations;
-    use crate::arch_port::port::mem::ArchMem;
-    use crate::arch_port::port::ArchPort;
+    use crate::arch::common::ArchPortTrait;
+    use crate::arch::common::MemOperations;
+    use crate::arch::port::mem::ArchMem;
+    use crate::arch::port::ArchPort;
+    use crate::println;
     use crate::utils::double_list::link_node::ElementPtr;
     use crate::utils::double_list::link_node::NodePtr;
     use crate::utils::double_list::link_node::*;
+
     use core::ops::FnOnce;
     use core::option::Option;
     use core::option::Option::*;
@@ -79,11 +81,34 @@ pub mod scheduler {
             stack_size: usize,
             entry: fn(usize),
         ) -> Result<(), &'static str> {
+            use cortex_m_semihosting::hprintln;
+            // hprintln!("Creating task: {}", name);
+            // println!("Stack size: {} bytes", stack_size);
+
             let tcb = TCB::new(name, stack_size, entry);
+
             let node = self.task_ready_list.push_back(tcb);
+            hprintln!(
+                "Task added to ready list. List size: {}",
+                self.task_ready_list.len()
+            );
+
             if let Some(mut element) = node.data {
                 element.set_node_ptr(Some(node));
+                hprintln!("Node pointer set for task: {}", name);
+            } else {
+                hprintln!("Failed to set node pointer for task: {}", name);
+                return Err("Failed to set node pointer");
             }
+
+            hprintln!("Task '{}' created successfully", name);
+
+            // // 打印当前调度器状态
+            // println!("Scheduler state after task creation:");
+            // println!("  Ready tasks: {}", self.task_ready_list.len());
+            // println!("  Delayed tasks: {}", self.task_delay_list.len());
+            // println!("  Current task: {:?}", self.current_task.as_ref().map(|t| t.name()));
+            // println!("  Idle task: {:?}", self.idle_task.as_ref().map(|t| t.name()));
             Ok(())
         }
 
@@ -196,27 +221,37 @@ pub mod scheduler {
     }
 
     // #[derive(Debug)]
+    #[repr(C)]
     pub struct TCB {
         // 任务控制块的字段
+        pub stack_top: usize,
         pub name: &'static str,
-        pub stack_ptr: usize,
+        pub stack_addr: usize,
         pub stack_size: usize,
         pub node_ptr: Option<NodePtr<Self>>,
         pub unblock_time: Option<usize>,
     }
-
+    use crate::arch::port::stack_check_context;
     impl TCB {
         fn new(name: &'static str, stack_size: usize, entry: fn(usize)) -> Self {
             // 这里需要实现实际的栈分配和初始化逻辑
-            let stack_ptr = ArchMem::mem_alloc(stack_size) as usize;
+            let stack_addr: usize = ArchMem::mem_alloc(stack_size) as usize;
+            let mut stack_top = stack_addr as usize + (stack_size - 1);
+            stack_top = stack_top & (!(0x0007));
+            
             let mut tcb = Self {
                 name,
-                stack_ptr,
+                stack_top,
+                stack_addr,
                 stack_size,
                 node_ptr: None,
                 unblock_time: None,
             };
-            ArchPort::init_task_stack(&mut tcb.stack_ptr, entry, 0);
+            println!("stack_top: {:x}", tcb.stack_top);
+            println!("stack_addr: {:x}", tcb.stack_addr);
+            println!("stack_size: {:x}", tcb.stack_size);
+            ArchPort::init_task_stack(&mut tcb.stack_top, entry, 0);
+            stack_check_context(tcb.stack_top as u32);
             tcb
         }
 
@@ -242,7 +277,7 @@ pub mod scheduler {
     fn idle_task(_: usize) {
         loop {
             // 空闲任务的实现
-            crate::arch_port::port::ArchPort::idle_task();
+            crate::arch::port::ArchPort::idle_task();
         }
     }
 
@@ -259,7 +294,7 @@ pub mod scheduler {
 }
 // 创建新任务
 
-#[cfg(all(test,target_arch="x86"))]
+#[cfg(all(test, target_arch = "x86"))]
 mod tests {
     use super::scheduler::*;
 

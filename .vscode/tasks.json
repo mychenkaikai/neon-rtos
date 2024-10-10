@@ -12,7 +12,14 @@
             "label": "Cargo Build (debug)",
             "type": "process",
             "command": "cargo",
-            "args": ["build"],
+            "args": [
+                "build",
+                "--target",
+                "thumbv7m-none-eabi",
+                "--lib",
+                "--example",
+                "basic"
+            ],
             "problemMatcher": [
                 "$rustc"
             ],
