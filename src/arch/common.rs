@@ -7,24 +7,12 @@ pub trait ArchPortTrait {
     fn is_interrupts_enabled() -> bool;
     fn enter_critical_section();
     fn exit_critical_section();
-    fn get_system_tick_count() -> u64;
+
     fn delay_ms(ms: u32);
     fn memory_barrier();
-    fn trigger_context_switch();
+
     fn start_first_task();
-    fn syscall(number: usize, arg1: usize, arg2: usize, arg3: usize) -> usize;
-    fn get_current_stack_pointer() -> *mut u8;
-    fn set_stack_pointer(sp: *mut u8);
-    fn get_current_privilege_level() -> u8;
-    fn switch_to_user_mode();
-    fn invalidate_instruction_cache();
-    fn flush_data_cache();
-    fn enter_low_power_mode();
-    fn exit_low_power_mode();
-    fn set_exception_handler(exception_type: ExceptionType, handler: fn());
-    fn get_last_exception_info() -> ExceptionInfo;
-    fn get_cpu_id() -> u32;
-    fn get_core_count() -> u32;
+
     fn task_yield() {}
 
     fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {}
