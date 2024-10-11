@@ -12,7 +12,7 @@ pub struct ArchMem;
 impl MemOperations for ArchMem {
     fn type_malloc<T>(data: T) -> NonNull<T> {
         let ptr = Box::new(data);
-        NonNull::new(Box::leak(ptr)).unwrap()
+        NonNull::new(Box::into_raw(ptr)).unwrap()
     }
 
     fn type_free<T>(ptr: NonNull<T>) -> T {
@@ -21,11 +21,16 @@ impl MemOperations for ArchMem {
 
     fn mem_alloc(size: usize) -> *mut u8 {
         let metadata_size = size_of::<usize>();
+        let align = align_of::<usize>().max(8);
         let total_size = size + metadata_size;
 
         // 创建 layout，包括元数据
-        let layout = Layout::from_size_align(total_size, 1).unwrap();
+        let layout = Layout::from_size_align(total_size, align).unwrap();
         let memory = unsafe { alloc(layout) };
+
+        if memory.is_null() {
+            panic!("memory allocation failed");
+        }
 
         // 将大小信息写入内存开头
         let metadata_ptr = memory as *mut usize;
@@ -41,12 +46,12 @@ impl MemOperations for ArchMem {
         let metadata_size = size_of::<usize>();
         let original_ptr = unsafe { ptr.sub(metadata_size) };
 
-        // 使用 layout 恢复内存
-        let layout = Layout::from_size_align(
-            unsafe { original_ptr.cast::<usize>().read() + metadata_size },
-            1,
-        )
-        .unwrap();
+        // 读取原始大小
+        let original_size = unsafe { *(original_ptr as *const usize) };
+        let align = align_of::<usize>().max(8);
+
+        // 使用原始大小和对齐创建 layout
+        let layout = Layout::from_size_align(original_size + metadata_size, align).unwrap();
         unsafe { dealloc(original_ptr, layout) };
     }
 }

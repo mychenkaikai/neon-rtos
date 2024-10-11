@@ -19,7 +19,14 @@
 			//"executable": "./target/thumbv7m-none-eabi/debug/examples/hello",
 			"cpu": "cortex-m3",
 			"machine": "lm3s6965evb",
-			"debuggerArgs": ["-ex", "addr=0x00000000"]
+			"debuggerArgs": ["-ex", "addr=0x00000000"],
+			"watchpoints": [
+				{
+					"address": "0x20000154",
+					"size": 4,
+					"type": "write"
+				}
+			]
 		}
 	]
 }

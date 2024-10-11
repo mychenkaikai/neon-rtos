@@ -11,6 +11,7 @@ use cortex_m_rt::exception;
 pub struct ArchPort;
 
 impl ArchPortTrait for ArchPort {
+    #[inline]
     fn idle_task() {
         cortex_m::asm::wfi();
     }
@@ -25,13 +26,22 @@ impl ArchPortTrait for ArchPort {
     fn is_interrupts_enabled() -> bool {
         true
     }
-    fn enter_critical_section() { /* 实现 */
+    fn enter_critical_section() {
+        cortex_m::interrupt::disable();
     }
-    fn exit_critical_section() { /* 实现 */
+    fn exit_critical_section() {
+        unsafe {
+            cortex_m::interrupt::enable();
+        }
+    }
+    #[inline]
+    fn critical_section<F: FnOnce()>(func: F) {
+        cortex_m::interrupt::free(|_| {
+            func();
+        });
     }
 
-    fn delay_ms(ms: u32) { /* 实现 */
-    }
+    fn delay_ms(ms: u32) {}
     fn memory_barrier() { /* 实现 */
     }
 
@@ -141,15 +151,16 @@ pub fn task_switch_context() {
 #[inline]
 pub fn set_current_task_psp(psp: *mut u32) {
     with_scheduler(|s| {
-        s.current_task().map(|mut t| {
-            t.stack_top = psp as usize;
+        s.current_task().map(|mut t| unsafe {
+            t.as_mut().stack_top = psp as usize;
         });
     });
 }
 #[no_mangle]
 #[inline]
 pub fn get_current_task_psp() -> *mut u32 {
-    with_scheduler(|s| s.current_task().map(|t| t.stack_top as *mut u32)).unwrap()
+    with_scheduler(|s| s.current_task().map(|t| unsafe { t.as_ref().stack_top as *mut u32 }))
+        .unwrap()
 }
 
 global_asm!(
@@ -173,8 +184,9 @@ SVC_Handler:
     mov r0, #0
     msr basepri, r0
 
-    cpsie i                  @ 启用中断
+                      @ 启用中断
     mov lr, #0xFFFFFFFD      @ 设置 LR 以使用 PSP 返回到线程模式
+    cpsie i
     bx lr
 
     .size SVC_Handler, .-SVC_Handler
@@ -206,8 +218,9 @@ PendSV_Handler:
     ldmia r0!, {{r4-r11}}
     msr psp, r0
 
-    cpsie i                  @ 启用中断
     mov lr, #0xFFFFFFFD
+    cpsie i                  @ 启用中断
+    
     bx lr
 
     .size PendSV_Handler, .-PendSV_Handler"

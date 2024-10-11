@@ -7,6 +7,7 @@ pub trait ArchPortTrait {
     fn is_interrupts_enabled() -> bool;
     fn enter_critical_section();
     fn exit_critical_section();
+    fn critical_section<F: FnOnce()>(func: F);
 
     fn delay_ms(ms: u32);
     fn memory_barrier();
