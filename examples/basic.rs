@@ -107,7 +107,7 @@ use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::Peripherals;
 // 定义 SysTick 的频率（假设为 1 kHz）
 
-const SYST_FREQ: u32 = 1;
+const SYST_FREQ: u32 = 100;
 const SYS_CLOCK: u32 = 12_000_000;
 // 定义 SysTick 的重新加载值
 const SYST_RELOAD: u32 = SYS_CLOCK / SYST_FREQ;

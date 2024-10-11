@@ -151,15 +151,15 @@ pub fn task_switch_context() {
 #[inline]
 pub fn set_current_task_psp(psp: *mut u32) {
     with_scheduler(|s| {
-        s.current_task().map(|mut t| unsafe {
-            t.as_mut().stack_top = psp as usize;
+        s.current_task().map(|mut tcb| unsafe {
+            tcb.stack_top = psp as usize;
         });
     });
 }
 #[no_mangle]
 #[inline]
 pub fn get_current_task_psp() -> *mut u32 {
-    with_scheduler(|s| s.current_task().map(|t| unsafe { t.as_ref().stack_top as *mut u32 }))
+    with_scheduler(|s| s.current_task().map(|tcb| tcb.stack_top as *mut u32))
         .unwrap()
 }
 

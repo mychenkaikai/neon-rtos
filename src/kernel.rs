@@ -89,16 +89,14 @@ pub mod scheduler {
 
             let tcb = TCB::new(name, stack_size, entry);
 
-            let mut node = self.task_ready_list.push_back(tcb);
+            let node = self.task_ready_list.push_back(tcb);
             hprintln!(
                 "Task added to ready list. List size: {}",
                 self.task_ready_list.len()
             );
 
-            if let Some(mut element) = unsafe { node.as_mut().data } {
-                unsafe {
-                    element.as_mut().set_node_ptr(Some(node));
-                }
+            if let Some(mut element) = node.data {
+                element.set_node_ptr(Some(node));
                 hprintln!("Node pointer set for task: {}", name);
             } else {
                 hprintln!("Failed to set node pointer for task: {}", name);
@@ -107,61 +105,38 @@ pub mod scheduler {
 
             hprintln!("Task '{}' created successfully", name);
 
-            // // 打印当前调度器状态
-            // println!("Scheduler state after task creation:");
-            // println!("  Ready tasks: {}", self.task_ready_list.len());
-            // println!("  Delayed tasks: {}", self.task_delay_list.len());
-            // println!("  Current task: {:?}", self.current_task.as_ref().map(|t| t.name()));
-            // println!("  Idle task: {:?}", self.idle_task.as_ref().map(|t| t.name()));
+
             Ok(())
         }
 
         pub fn start(&mut self) {
-
-
-            println!(
-                "Size of Ptr<T>: {}",
-                core::mem::size_of::<crate::utils::double_list::ptr::Ptr<TCB>>()
-            );
-            println!(
-                "Alignment of Ptr<T>: {}",
-                core::mem::align_of::<crate::utils::double_list::ptr::Ptr<TCB>>()
-            );
-
             // 初始化空闲任务
-            self.idle_task = Some(ArchMem::type_malloc(TCB::new("idle", 500, idle_task)));
+            self.idle_task = Some(ElementPtr::new(TCB::new("idle", 500, idle_task)));
 
             // 选择第一个任务开始执行
             self.current_task = self
                 .task_ready_list
                 .front()
                 .and_then(|tcb| tcb.get_node_ptr())
-                .and_then(|mut node| unsafe { node.as_mut().data })
+                .and_then(|node| node.data)
                 .or_else(|| self.idle_task);
         }
 
         pub fn task_switch_context(&mut self) {
-            
-            if let Some(mut current) = self.current_task {
-                let next = if let Some(mut next_node) = unsafe {
-                    current
-                        .as_mut()
-                        .get_node_ptr()
-                        .and_then(|mut node| node.as_mut().next)
-                } {
-                    unsafe { next_node.as_mut().data }
-                } else {
-                    self.task_ready_list
-                        .front()
-                        .and_then(|tcb| tcb.get_node_ptr())
-                        .and_then(|mut node| unsafe { node.as_mut().data })
-                };
+            if let Some(current) = self.current_task {
+                let next =
+                    if let Some(next_node) = current.get_node_ptr().and_then(|node| node.next) {
+                        next_node.data
+                    } else {
+                        self.task_ready_list
+                            .front()
+                            .and_then(|tcb| tcb.get_node_ptr())
+                            .and_then(|node| node.data)
+                    };
 
                 self.current_task = next.or(self.idle_task);
 
-
-                if let Some(mut tcb) = self.current_task {
-                    let tcb = unsafe { tcb.as_mut() };
+                if let Some(tcb) = self.current_task {
                     if tcb.check_stack_overflow() {
                         panic!("Stack overflow detected in task: {:x}", tcb.stack_addr);
                     }
@@ -173,26 +148,22 @@ pub mod scheduler {
             // assert!(!ArchPort::in_interrupt());
             if let Some(mut current) = self.current_task {
                 ArchPort::enter_critical_section();
-                {
-                    let unblock_time = self.ticks_count + ticks;
-                    unsafe {
-                        current.as_mut().set_unblock_time(Some(unblock_time));
-                    }
+                let unblock_time = self.ticks_count + ticks;
+                current.set_unblock_time(Some(unblock_time));
 
-                    if let Some(node) = unsafe { current.as_mut().get_node_ptr() } {
-                        // 从就绪列表中分离节点
-                        self.task_ready_list.detach(node);
+                if let Some(node) = current.get_node_ptr() {
+                    // 从就绪列表中分离节点
+                    self.task_ready_list.detach(node);
 
-                        // 将分离的节点添加到延迟列表
-                        self.task_delay_list.attach_back(node);
+                    // 将分离的节点添加到延迟列表
+                    self.task_delay_list.attach_back(node);
 
-                        self.update_next_delay_task_unblock_time();
-                    }
+                    self.update_next_delay_task_unblock_time();
                 }
-                ArchPort::exit_critical_section();
-
-                ArchPort::task_yield();
             }
+            ArchPort::exit_critical_section();
+
+            ArchPort::task_yield();
         }
 
         pub fn tick(&mut self) {
@@ -219,19 +190,17 @@ pub mod scheduler {
 
             let mut current = self.task_delay_list.head;
             while let Some(mut node) = current {
-                let tcb = unsafe { node.as_ref().data.unwrap().as_mut() };
+                let tcb = node.data.as_ref().unwrap();
                 if let Some(unblock_time) = tcb.unblock_time() {
                     if current_ticks >= unblock_time {
-                        let next = unsafe { node.as_ref().next };
+                        let next = node.next;
 
                         // 从延迟列表中分离节点
                         self.task_delay_list.detach(node);
 
                         // 重置解除阻塞时间
-                        if let Some(tcb) = unsafe { node.as_mut().data.as_mut() } {
-                            unsafe {
-                                tcb.as_mut().set_unblock_time(None);
-                            }
+                        if let Some(tcb) = node.data.as_mut() {
+                            tcb.set_unblock_time(None);
                         }
 
                         // 将节点添加到就绪列表
@@ -241,10 +210,10 @@ pub mod scheduler {
                     } else {
                         next_unblock_time =
                             Some(next_unblock_time.map_or(unblock_time, |t| t.min(unblock_time)));
-                        current = unsafe { node.as_mut().next };
+                        current = node.next;
                     }
                 } else {
-                    current = unsafe { node.as_mut().next };
+                    current = node.next;
                 }
             }
 
@@ -254,32 +223,8 @@ pub mod scheduler {
         fn update_next_delay_task_unblock_time(&mut self) {
             self.next_delay_task_unblock_time = self
                 .task_delay_list
-                .iter_nodes()
-                .filter_map(|node| {
-                    // 检查节点指针
-                    if node.as_ptr().is_null() {
-                        return None;
-                    }
-
-                    // 安全：我们已经检查了指针不为空
-                    let node_ref = unsafe { node.as_ref() };
-
-                    // 检查 data 字段
-                    if node_ref.data.is_none() {
-                        return None;
-                    }
-
-                    // 使用 as_ref() 前再次检查
-                    node_ref.data.as_ref().and_then(|tcb| {
-                        // 再次检查 TCB 指针
-                        if tcb.as_ptr().is_null() {
-                            None
-                        } else {
-                            // 安全：我们已经多次检查了指针的有效性
-                            unsafe { tcb.as_ref().unblock_time() }
-                        }
-                    })
-                })
+                .iter()
+                .filter_map(|tcb| tcb.unblock_time())
                 .min();
         }
     }
@@ -319,7 +264,7 @@ pub mod scheduler {
             println!("stack_addr: {:x}", tcb.stack_addr);
             println!("stack_size: {:x}", tcb.stack_size);
             ArchPort::init_task_stack(&mut tcb.stack_top, entry, 0);
-            stack_check_context(tcb.stack_top as u32);
+            // stack_check_context(tcb.stack_top as u32);
             tcb
         }
         fn check_stack_overflow(&self) -> bool {

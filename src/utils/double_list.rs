@@ -16,8 +16,7 @@ pub mod ptr {
     use core::ptr::NonNull;
 
     #[derive(PartialEq, Eq)]
-    #[repr(C)]
-    pub struct Ptr<T>(NonNull<T>);
+    pub struct Ptr<T>(pub NonNull<T>);
 
     impl<T> Ptr<T> {
         pub fn new(data: T) -> Self {
@@ -49,18 +48,15 @@ pub mod ptr {
     impl<T> Deref for Ptr<T> {
         type Target = T;
 
+        #[inline]
         fn deref(&self) -> &Self::Target {
-            // assert!(
-            //     !core::ptr::eq(value, core::ptr::null()),
-            //     "Dereferenced to null"
-            // );
-            let ptr = self.0.clone();
-            // assert!(!ptr, "Null pointer in deref");
-            unsafe { ptr.as_ref() }
+            // unsafe { &*self.0 }
+            unsafe { self.0.as_ref() }
         }
     }
 
     impl<T> DerefMut for Ptr<T> {
+        #[inline]
         fn deref_mut(&mut self) -> &mut Self::Target {
             // unsafe { &mut *self.0 }
             unsafe { self.0.as_mut() }
@@ -70,10 +66,7 @@ pub mod ptr {
 
 pub mod link_node {
 
-    // use super::ptr::Ptr;
-    use crate::arch::common::MemOperations;
-    use crate::arch::port::mem::ArchMem;
-    use crate::arch::port::*;
+    use super::ptr::Ptr;
     use core::clone::Clone;
     use core::marker::Copy;
     use core::ops::Deref;
@@ -82,9 +75,9 @@ pub mod link_node {
     use core::option::Option;
     use core::option::Option::*;
 
-    pub type ElementPtr<T> = NonNull<T>;
-    pub type NodePtr<T> = NonNull<LinkNode<T>>;
-    pub type ListPtr<T> = NonNull<LinkList<T>>;
+    pub type ElementPtr<T> = Ptr<T>;
+    pub type NodePtr<T> = Ptr<LinkNode<T>>;
+    pub type ListPtr<T> = Ptr<LinkList<T>>;
 
     #[derive(Clone, PartialEq, Eq)]
     pub struct LinkNode<T> {
@@ -99,19 +92,12 @@ pub mod link_node {
     impl<T> Drop for LinkList<T> {
         fn drop(&mut self) {
             while let Some(mut node) = self.head.take() {
-                let next = unsafe { node.as_mut().next.take() };
+                let next = node.next.take();
 
                 // 释放节点和数据
-                unsafe {
-                    node.as_mut()
-                        .data
-                        .as_mut()
-                        .map(|data| ArchMem::type_free(*data));
-                }
+                node.data.as_mut().map(|data| data.free_and_into_element());
 
-                unsafe {
-                    ArchMem::type_free(node);
-                }
+                node.free_and_into_element();
 
                 self.head = next;
             }
@@ -125,7 +111,7 @@ pub mod link_node {
             Self {
                 next: None,
                 prev: None,
-                data: Some(ArchMem::type_malloc(data)),
+                data: Some(ElementPtr::new(data)),
                 list_handle: None,
             }
         }
@@ -157,24 +143,20 @@ pub mod link_node {
             self.list_handle
         }
 
-        unsafe fn insert(&mut self, mut node: NodePtr<T>) {
-            node.as_mut().prev = self.prev;
+        fn insert(&mut self, mut node: NodePtr<T>) {
+            node.prev = self.prev;
 
-            node.as_mut().next = self.next;
+            node.next = self.next;
 
             self.prev = Some(node);
         }
 
         fn del(&mut self) {
             if let Some(mut next) = self.next {
-                unsafe {
-                    next.as_mut().prev = self.prev;
-                }
+                next.prev = self.prev;
             }
             if let Some(mut prev) = self.prev {
-                unsafe {
-                    prev.as_mut().next = self.next;
-                }
+                prev.next = self.next;
             }
             self.next = None;
             self.prev = None;
@@ -204,18 +186,16 @@ pub mod link_node {
         #[inline]
         pub fn push_back(&mut self, data: T) -> NodePtr<T> {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
-            let new_node = ArchMem::type_malloc(LinkNode {
-                data: Some(ArchMem::type_malloc(data)),
+            let new_node = NodePtr::new(LinkNode {
+                data: Some(ElementPtr::new(data)),
                 next: None,
                 prev: self.tail,
-                list_handle: Some(self_ptr),
+                list_handle: Some(ListPtr::from_non_null(self_ptr)),
             });
 
             match self.tail.take() {
                 Some(mut old_tail) => {
-                    unsafe {
-                        old_tail.as_mut().next = Some(new_node);
-                    }
+                    old_tail.next = Some(new_node);
                     self.tail = Some(new_node);
                 }
                 None => {
@@ -229,18 +209,16 @@ pub mod link_node {
         #[inline]
         pub fn push_front(&mut self, data: T) -> NodePtr<T> {
             let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
-            let new_node = ArchMem::type_malloc(LinkNode {
-                data: Some(ArchMem::type_malloc(data)),
+            let new_node = NodePtr::new(LinkNode {
+                data: Some(ElementPtr::new(data)),
                 next: self.head,
                 prev: None,
-                list_handle: Some(self_ptr),
+                list_handle: Some(ListPtr::from_non_null(self_ptr)),
             });
 
             match self.head.take() {
                 Some(mut old_head) => {
-                    unsafe {
-                        old_head.as_mut().prev = Some(new_node);
-                    }
+                    old_head.prev = Some(new_node);
                     self.head = Some(new_node);
                 }
                 None => {
@@ -256,18 +234,14 @@ pub mod link_node {
             self.head.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_head) = unsafe{node.as_mut().next} {
-                    unsafe {
-                        new_head.as_mut().prev = None;
-                    }
+                if let Some(mut new_head) = node.next {
+                    new_head.prev = None;
                     self.head = Some(new_head);
                 } else {
                     self.tail = None;
                 }
-                let data = unsafe { ArchMem::type_free(node.as_mut().data.unwrap()) };
-
-                ArchMem::type_free(node);
-
+                let data = node.data.unwrap().free_and_into_element();
+                node.free_and_into_element();
                 data
             })
         }
@@ -276,75 +250,55 @@ pub mod link_node {
             self.tail.take().map(|mut node| {
                 self.len -= 1;
 
-                if let Some(mut new_tail) = unsafe { node.as_mut().prev } {
-                    unsafe {
-                        new_tail.as_mut().next = None;
-                    }
+                if let Some(mut new_tail) = node.prev {
+                    new_tail.next = None;
                     self.tail = Some(new_tail);
                 } else {
                     self.head = None;
                 }
-                let data = unsafe { ArchMem::type_free(node.as_mut().data.unwrap()) };
-                unsafe {
-                    ArchMem::type_free(node);
-                }
+                let data = node.data.unwrap().free_and_into_element();
+                node.free_and_into_element();
                 data
             })
         }
 
         pub fn front(&self) -> Option<&T> {
-            self.head
-                .as_ref()
-                .and_then(|node| unsafe { Some(node.as_ref().data.unwrap().as_ref()) })
+            self.head.as_deref().and_then(|node| node.data.as_deref())
         }
 
         pub fn back(&self) -> Option<&T> {
-            self.tail
-                .as_ref()
-                .and_then(|node| unsafe { Some(node.as_ref().data.unwrap().as_ref()) })
+            self.tail.as_deref().and_then(|node| node.data.as_deref())
         }
 
         pub fn detach(&mut self, mut node: NodePtr<T>) -> NodePtr<T> {
-            if let Some(mut prev) = unsafe { node.as_mut().prev } {
-                unsafe {
-                    prev.as_mut().next = node.as_mut().next;
-                }
+            if let Some(mut prev) = node.prev {
+                prev.next = node.next;
             } else {
-                self.head = unsafe { node.as_mut().next };
+                self.head = node.next;
             }
 
-            if let Some(mut next) = unsafe { node.as_mut().next } {
-                unsafe {
-                    next.as_mut().prev = node.as_mut().prev;
-                }
+            if let Some(mut next) = node.next {
+                next.prev = node.prev;
             } else {
-                self.tail = unsafe { node.as_mut().prev };
+                self.tail = node.prev;
             }
 
             self.len -= 1;
 
             // 重置节点的前后指针
-            unsafe {
-                node.as_mut().prev = None;
-                node.as_mut().next = None;
-            }
+            node.prev = None;
+            node.next = None;
 
             node
         }
 
         // 将已存在的节点添加到列表末尾
         pub fn attach_back(&mut self, mut node: NodePtr<T>) {
-            unsafe {
-                node.as_mut().prev = self.tail;
-            }
-            unsafe {
-                node.as_mut().next = None;
-            }
+            node.prev = self.tail;
+            node.next = None;
 
             if let Some(mut tail) = self.tail {
-                unsafe {
-                    tail.as_mut().next = Some(node);
-                }
+                tail.next = Some(node);
             } else {
                 self.head = Some(node);
             }
@@ -387,8 +341,8 @@ pub mod link_node {
 
         fn next(&mut self) -> Option<Self::Item> {
             self.next.and_then(|node| unsafe {
-                self.next = node.as_ref().next.as_ref().cloned();
-                Some(node.as_ref().data.unwrap())
+                self.next = node.next;
+                Some(node.data.unwrap())
             })
         }
     }
@@ -398,7 +352,7 @@ pub mod link_node {
 
         fn next(&mut self) -> Option<Self::Item> {
             self.next.and_then(|node| {
-                self.next = unsafe { node.as_ref().next.as_ref().cloned() };
+                self.next = node.next;
                 Some(node)
             })
         }
