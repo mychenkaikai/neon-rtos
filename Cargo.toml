@@ -2,6 +2,8 @@
 name = "neon"
 version = "0.1.0"
 edition = "2021"
+description = "A real-time operating system for ARM Cortex-M or RISC-V microcontrollers"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 cortex-m = "0.7.7"
