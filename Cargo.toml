@@ -1,5 +1,5 @@
 [package]
-name = "neon"
+name = "neon-rtos"
 version = "0.1.0"
 edition = "2021"
 description = "A real-time operating system for ARM Cortex-M or RISC-V microcontrollers"
