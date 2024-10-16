@@ -2,6 +2,8 @@ pub mod asm;
 pub mod interrupt;
 pub mod mem;
 pub mod syscall;
+pub mod start;
+
 use crate::kernel::scheduler::with_scheduler;
 use crate::{arch::common::*, kernel::scheduler};
 

@@ -250,7 +250,6 @@ pub mod scheduler {
         pub unblock_time: Option<usize>,
     }
     const STACK_CANARY: u32 = 0xDEADBEEF;
-    use crate::arch::port::stack_check_context;
     impl TCB {
         fn new(name: &'static str, stack_size: usize, entry: fn(usize)) -> Self {
             // 这里需要实现实际的栈分配和初始化逻辑
@@ -273,7 +272,6 @@ pub mod scheduler {
             kernel_println!("stack_addr: {:x}", tcb.stack_addr);
             kernel_println!("stack_size: {:x}", tcb.stack_size);
             ArchPort::init_task_stack(&mut tcb.stack_top, entry, 0);
-            // stack_check_context(tcb.stack_top as u32);
             tcb
         }
         fn check_stack_overflow(&self) -> bool {

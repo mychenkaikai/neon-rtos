@@ -21,29 +21,28 @@ fn main() {
     let target = env::var("TARGET").unwrap();
     if target == "x86_64-unknown-linux-gnu" {
         println!("Skipping memory.x for x86_64 target");
-        return;
+    } else if target == "thumbv7m-none-eabi" {
+        let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
+        File::create(out.join("memory.x"))
+            .unwrap()
+            .write_all(include_bytes!("./src/arch/port_cortex_m/memory.x"))
+            .unwrap();
+        println!("cargo:rustc-link-search={}", out.display());
+
+        // By default, Cargo will re-run a build script whenever
+        // any file in the project changes. By specifying `memory.x`
+        // here, we ensure the build script is only re-run when
+        // `memory.x` is changed.
+        println!("cargo:rerun-if-changed=memory.x");
+
+        // Specify linker arguments.
+
+        // `--nmagic` is required if memory section addresses are not aligned to 0x10000,
+        // for example the FLASH and RAM sections in your `memory.x`.
+        // See https://github.com/rust-embedded/cortex-m-quickstart/pull/95
+        println!("cargo:rustc-link-arg=--nmagic");
+
+        // Set the linker script to the one provided by cortex-m-rt.
+        println!("cargo:rustc-link-arg=-Tlink.x");
     }
-
-    let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    File::create(out.join("memory.x"))
-        .unwrap()
-        .write_all(include_bytes!("memory.x"))
-        .unwrap();
-    println!("cargo:rustc-link-search={}", out.display());
-
-    // By default, Cargo will re-run a build script whenever
-    // any file in the project changes. By specifying `memory.x`
-    // here, we ensure the build script is only re-run when
-    // `memory.x` is changed.
-    println!("cargo:rerun-if-changed=memory.x");
-
-    // Specify linker arguments.
-
-    // `--nmagic` is required if memory section addresses are not aligned to 0x10000,
-    // for example the FLASH and RAM sections in your `memory.x`.
-    // See https://github.com/rust-embedded/cortex-m-quickstart/pull/95
-    println!("cargo:rustc-link-arg=--nmagic");
-
-    // Set the linker script to the one provided by cortex-m-rt.
-    println!("cargo:rustc-link-arg=-Tlink.x");
 }
