@@ -4,8 +4,8 @@ extern crate alloc;
 
 use super::MemOperations;
 use alloc::alloc::*;
-use core::ptr::NonNull;
 use core::mem::size_of;
+use core::ptr::NonNull;
 
 pub struct ArchMem;
 

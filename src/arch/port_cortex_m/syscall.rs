@@ -3,9 +3,8 @@ use crate::kernel::scheduler::with_scheduler;
 extern "C" {
     pub fn task_exit();
     pub fn task_yield();
-    pub fn task_sleep(time:usize);
+    pub fn task_sleep(time: usize);
 }
-
 
 pub fn syscall_exit() {}
 

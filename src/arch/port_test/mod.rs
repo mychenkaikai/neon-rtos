@@ -64,8 +64,5 @@ impl ArchPortTrait for ArchPort {
         crate::kernel::scheduler::with_scheduler(|scheduler| scheduler.task_switch_context());
     }
 
-    fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
-
-    }
+    fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {}
 }
-

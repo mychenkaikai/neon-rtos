@@ -88,9 +88,6 @@ pub mod scheduler {
             stack_size: usize,
             entry: fn(usize),
         ) -> Result<(), &'static str> {
-
-
-
             let tcb = TCB::new(name, stack_size, entry);
 
             let node = self.task_ready_list.push_back(tcb);
@@ -153,7 +150,6 @@ pub mod scheduler {
         }
 
         pub fn delay_task(&mut self, ms: usize) {
-
             // assert!(!ArchPort::in_interrupt());
             if let Some(mut current) = self.current_task {
                 let ticks = (ms * self.ticks_per_second) / 1000;
@@ -170,7 +166,6 @@ pub mod scheduler {
                     self.update_next_delay_task_unblock_time();
                 }
             }
-
 
             ArchPort::task_yield();
         }

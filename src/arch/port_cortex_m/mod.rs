@@ -1,8 +1,8 @@
 pub mod asm;
 pub mod interrupt;
 pub mod mem;
-pub mod syscall;
 pub mod start;
+pub mod syscall;
 
 use crate::kernel::scheduler::with_scheduler;
 use crate::{arch::common::*, kernel::scheduler};
@@ -93,45 +93,6 @@ impl ArchPortTrait for ArchPort {
 fn task_exit_error() {
     kernel_println!("task_exit_error");
     loop {}
-}
-
-#[no_mangle]
-fn stack_check() {
-    unsafe {
-        let mut r0: u32;
-        asm!("mrs r0, psp", lateout("r0") r0);
-
-        kernel_println!("stack check start - PSP: 0x{:08x}", r0);
-        for i in 8..16 {
-            let value = *(r0 as *const u32).add(i);
-            kernel_println!("switch Stack[{}]: 0x{:08x}", i, value);
-        }
-        kernel_println!("stack check end------------------");
-    }
-}
-
-#[no_mangle]
-fn stack_check_half() {
-    unsafe {
-        let mut r0: u32;
-
-        asm!("mrs r0, psp", lateout("r0") r0);
-        kernel_println!("stack check start - PSP: 0x{:08x}", r0);
-        for i in 0..8 {
-            let value = *(r0 as *const u32).add(i);
-            kernel_println!("switch Stack[{}]: 0x{:08x}", i, value);
-        }
-        kernel_println!("stack check end------------------");
-    }
-}
-
-pub fn stack_check_context(psp: u32) {
-    unsafe {
-        for i in 8..16 {
-            let value = *(psp as *const u32).add(i);
-            kernel_println!("switch Stack[{}]: 0x{:08x}", i, value);
-        }
-    }
 }
 
 #[no_mangle]
