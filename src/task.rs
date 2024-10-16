@@ -8,6 +8,6 @@ pub fn create_task(
     with_scheduler(|s| s.create_task(name, stack_size, entry))
 }
 
-pub fn start() {
-    with_scheduler(|s| s.start())
+pub fn start(ticks_per_second: usize) {
+    with_scheduler(|s| s.start(ticks_per_second))
 }

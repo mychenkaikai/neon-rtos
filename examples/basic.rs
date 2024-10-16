@@ -76,7 +76,7 @@ fn main() -> ! {
 
     task::create_task("task1", 1024 * 2, test1).unwrap();
     task::create_task("task2", 1024 * 2, test2).unwrap();
-    task::start();
+    task::start(SYST_FREQ as usize);
 
     let p = Peripherals::take().unwrap();
     let mut syst = p.SYST;

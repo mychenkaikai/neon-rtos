@@ -26,6 +26,7 @@ pub mod scheduler {
         idle_task: Option<ElementPtr<TCB>>,
         next_delay_task_unblock_time: Option<usize>,
         ticks_count: usize,
+        ticks_per_second: usize,
     }
 
     impl Scheduler {
@@ -37,6 +38,7 @@ pub mod scheduler {
                 idle_task: None,
                 next_delay_task_unblock_time: None,
                 ticks_count: 0,
+                ticks_per_second: 100,
             }
         }
 
@@ -110,7 +112,7 @@ pub mod scheduler {
             Ok(())
         }
 
-        pub fn start(&mut self) {
+        pub fn start(&mut self, ticks_per_second: usize) {
             // 初始化空闲任务
             self.idle_task = Some(ElementPtr::new(TCB::new("idle", 500, idle_task)));
 
@@ -124,6 +126,8 @@ pub mod scheduler {
 
             self.current_task
                 .and_then(|tcb| Some(set_psp(tcb.stack_top + 8 * size_of::<usize>())));
+
+            self.ticks_per_second = ticks_per_second;
         }
 
         pub fn task_switch_context(&mut self) {
@@ -148,11 +152,11 @@ pub mod scheduler {
             }
         }
 
-        pub fn delay_task(&mut self, ticks: usize) {
+        pub fn delay_task(&mut self, ms: usize) {
 
             // assert!(!ArchPort::in_interrupt());
             if let Some(mut current) = self.current_task {
-
+                let ticks = (ms * self.ticks_per_second) / 1000;
                 let unblock_time = self.ticks_count + ticks;
                 current.set_unblock_time(Some(unblock_time));
 
