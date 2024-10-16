@@ -1,11 +1,14 @@
 pub mod scheduler {
-    use cortex_m::asm::nop;
 
     use crate::arch::common::ArchPortTrait;
     use crate::arch::common::MemOperations;
+    use crate::arch::port::get_psp;
     use crate::arch::port::mem::ArchMem;
+    use crate::arch::port::set_current_task_stack_top;
+    use crate::arch::port::set_psp;
     use crate::arch::port::ArchPort;
-    use crate::println;
+    // use crate::utils::print::*;
+    use crate::kernel_println;
     use crate::utils::double_list::link_node::ElementPtr;
     use crate::utils::double_list::link_node::NodePtr;
     use crate::utils::double_list::link_node::*;
@@ -83,28 +86,26 @@ pub mod scheduler {
             stack_size: usize,
             entry: fn(usize),
         ) -> Result<(), &'static str> {
-            use cortex_m_semihosting::hprintln;
-            // hprintln!("Creating task: {}", name);
-            // println!("Stack size: {} bytes", stack_size);
+
+
 
             let tcb = TCB::new(name, stack_size, entry);
 
             let node = self.task_ready_list.push_back(tcb);
-            hprintln!(
+            kernel_println!(
                 "Task added to ready list. List size: {}",
                 self.task_ready_list.len()
             );
 
             if let Some(mut element) = node.data {
                 element.set_node_ptr(Some(node));
-                hprintln!("Node pointer set for task: {}", name);
+                kernel_println!("Node pointer set for task: {}", name);
             } else {
-                hprintln!("Failed to set node pointer for task: {}", name);
+                kernel_println!("Failed to set node pointer for task: {}", name);
                 return Err("Failed to set node pointer");
             }
 
-            hprintln!("Task '{}' created successfully", name);
-
+            kernel_println!("Task '{}' created successfully", name);
 
             Ok(())
         }
@@ -120,6 +121,9 @@ pub mod scheduler {
                 .and_then(|tcb| tcb.get_node_ptr())
                 .and_then(|node| node.data)
                 .or_else(|| self.idle_task);
+
+            self.current_task
+                .and_then(|tcb| Some(set_psp(tcb.stack_top + 8 * size_of::<usize>())));
         }
 
         pub fn task_switch_context(&mut self) {
@@ -145,9 +149,10 @@ pub mod scheduler {
         }
 
         pub fn delay_task(&mut self, ticks: usize) {
+
             // assert!(!ArchPort::in_interrupt());
             if let Some(mut current) = self.current_task {
-                ArchPort::enter_critical_section();
+
                 let unblock_time = self.ticks_count + ticks;
                 current.set_unblock_time(Some(unblock_time));
 
@@ -161,7 +166,7 @@ pub mod scheduler {
                     self.update_next_delay_task_unblock_time();
                 }
             }
-            ArchPort::exit_critical_section();
+
 
             ArchPort::task_yield();
         }
@@ -260,9 +265,9 @@ pub mod scheduler {
                 node_ptr: None,
                 unblock_time: None,
             };
-            println!("stack_top: {:x}", tcb.stack_top);
-            println!("stack_addr: {:x}", tcb.stack_addr);
-            println!("stack_size: {:x}", tcb.stack_size);
+            kernel_println!("stack_top: {:x}", tcb.stack_top);
+            kernel_println!("stack_addr: {:x}", tcb.stack_addr);
+            kernel_println!("stack_size: {:x}", tcb.stack_size);
             ArchPort::init_task_stack(&mut tcb.stack_top, entry, 0);
             // stack_check_context(tcb.stack_top as u32);
             tcb

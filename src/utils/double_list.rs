@@ -44,7 +44,7 @@ pub mod ptr {
             self.0.as_ptr()
         }
     }
-    use core::ptr;
+
     impl<T> Deref for Ptr<T> {
         type Target = T;
 
@@ -625,7 +625,7 @@ mod tests {
 
         // 检查每个元素的 node_ptr
         for (index, item) in list.iter().enumerate() {
-            println!(
+            kernel_println!(
                 "Item {}: value = {}, node_ptr = {:?}",
                 index,
                 item.value,

@@ -793,8 +793,8 @@ Symbol table '.symtab' contains 1038 entries:
    789: 200000a0    44 OBJECT  GLOBAL DEFAULT    6 SCHEDULER
    790: 20000020   128 OBJECT  GLOBAL DEFAULT    6 TESTA
    791: 200000cc   128 OBJECT  GLOBAL DEFAULT    6 TESTB
-   792: 000038d3    40 FUNC    GLOBAL DEFAULT    2 get_current_task_psp
-   793: 000038c1    18 FUNC    GLOBAL DEFAULT    2 set_current_task_psp
+   792: 000038d3    40 FUNC    GLOBAL DEFAULT    2 get_current_task_stack_top
+   793: 000038c1    18 FUNC    GLOBAL DEFAULT    2 set_current_task_stack_top
    794: 000038b7    10 FUNC    GLOBAL DEFAULT    2 task_switch_context
    795: 00003cfb     4 FUNC    GLOBAL DEFAULT    2 DefaultHandler_
    796: 00003cff     2 FUNC    GLOBAL DEFAULT    2 DefaultPreInit
