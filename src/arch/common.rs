@@ -14,7 +14,7 @@ pub trait ArchPortTrait {
 
     fn start_first_task();
 
-    fn task_yield() {}
+    fn call_task_yield() {}
 
     fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {}
 }

@@ -1,4 +1,3 @@
-pub mod asm;
 pub mod interrupt;
 pub mod mem;
 pub mod start;
@@ -7,8 +6,8 @@ pub mod syscall;
 use crate::kernel::scheduler::with_scheduler;
 use crate::{arch::common::*, kernel::scheduler};
 
+use core::arch::asm;
 use core::mem::size_of;
-use core::{arch::asm, ptr::addr_of};
 use cortex_m::{self, register::psp};
 
 use crate::kernel_println;
@@ -64,11 +63,11 @@ impl ArchPortTrait for ArchPort {
                 // "svc 0",
             );
         }
-        ArchPort::task_yield();
+        ArchPort::call_task_yield();
     }
 
     #[inline]
-    fn task_yield() {
+    fn call_task_yield() {
         cortex_m::peripheral::SCB::set_pendsv();
         cortex_m::asm::dsb();
         cortex_m::asm::isb();

@@ -60,7 +60,7 @@ impl ArchPortTrait for ArchPort {
     fn get_core_count() -> u32 {
         0
     }
-    fn task_yield() {
+    fn call_task_yield() {
         crate::kernel::scheduler::with_scheduler(|scheduler| scheduler.task_switch_context());
     }
 

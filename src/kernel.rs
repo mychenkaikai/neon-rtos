@@ -2,16 +2,16 @@ pub mod scheduler {
 
     use crate::arch::common::ArchPortTrait;
     use crate::arch::common::MemOperations;
-    use crate::arch::port::get_psp;
+
     use crate::arch::port::mem::ArchMem;
-    use crate::arch::port::set_current_task_stack_top;
+
     use crate::arch::port::set_psp;
     use crate::arch::port::ArchPort;
     // use crate::utils::print::*;
     use crate::kernel_println;
-    use crate::utils::double_list::link_node::ElementPtr;
-    use crate::utils::double_list::link_node::NodePtr;
-    use crate::utils::double_list::link_node::*;
+    use crate::utils::double_list::ElementPtr;
+    use crate::utils::double_list::NodePtr;
+    use crate::utils::double_list::*;
 
     use core::ops::FnOnce;
     use core::option::Option;
@@ -88,6 +88,7 @@ pub mod scheduler {
             stack_size: usize,
             entry: fn(usize),
         ) -> Result<(), &'static str> {
+            ArchPort::disable_interrupts();
             let tcb = TCB::new(name, stack_size, entry);
 
             let node = self.task_ready_list.push_back(tcb);
@@ -105,11 +106,11 @@ pub mod scheduler {
             }
 
             kernel_println!("Task '{}' created successfully", name);
-
+            ArchPort::enable_interrupts();
             Ok(())
         }
 
-        pub fn start(&mut self, ticks_per_second: usize) {
+        pub fn start(&mut self, entry: fn(), ticks_per_second: usize) -> ! {
             // 初始化空闲任务
             self.idle_task = Some(ElementPtr::new(TCB::new("idle", 500, idle_task)));
 
@@ -125,6 +126,10 @@ pub mod scheduler {
                 .and_then(|tcb| Some(set_psp(tcb.stack_top + 8 * size_of::<usize>())));
 
             self.ticks_per_second = ticks_per_second;
+
+            entry();
+
+            loop {}
         }
 
         pub fn task_switch_context(&mut self) {
@@ -167,7 +172,7 @@ pub mod scheduler {
                 }
             }
 
-            ArchPort::task_yield();
+            ArchPort::call_task_yield();
         }
 
         pub fn tick(&mut self) {
@@ -184,7 +189,7 @@ pub mod scheduler {
 
             // 如果就绪列表不为空，进行任务切换
             if !self.task_ready_list.is_empty() {
-                ArchPort::task_yield();
+                ArchPort::call_task_yield();
             }
         }
 

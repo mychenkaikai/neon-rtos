@@ -5,383 +5,315 @@
 // type NodeType = NodePtr<ElementType>;
 // type ListType = ();
 
-pub mod ptr {
-    use crate::arch::common::MemOperations;
-    use crate::arch::port::mem::ArchMem;
-    use crate::arch::port::*;
-    // use crate::arch_port::port::;
-    use core::clone::Clone;
-    use core::marker::Copy;
-    use core::ops::{Deref, DerefMut};
-    use core::ptr::NonNull;
+use crate::utils::ptr::Ptr;
+use core::clone::Clone;
 
-    #[derive(PartialEq, Eq)]
-    pub struct Ptr<T>(pub NonNull<T>);
+use core::ptr::NonNull;
 
-    impl<T> Ptr<T> {
-        pub fn new(data: T) -> Self {
-            Ptr(ArchMem::type_malloc(data))
+use core::option::Option;
+use core::option::Option::*;
+
+pub type ElementPtr<T> = Ptr<T>;
+pub type NodePtr<T> = Ptr<LinkNode<T>>;
+pub type ListPtr<T> = Ptr<LinkList<T>>;
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct LinkNode<T> {
+    pub data: Option<ElementPtr<T>>,
+    pub next: Option<NodePtr<T>>,
+    pub prev: Option<NodePtr<T>>,
+    pub list_handle: Option<ListPtr<T>>,
+}
+
+// impl<T> Copy for LinkNode<T> {}
+
+impl<T> Drop for LinkList<T> {
+    fn drop(&mut self) {
+        while let Some(mut node) = self.head.take() {
+            let next = node.next.take();
+
+            // 释放节点和数据
+            node.data.as_mut().map(|data| data.free_and_into_element());
+
+            node.free_and_into_element();
+
+            self.head = next;
         }
-
-        pub fn from_non_null(ptr: NonNull<T>) -> Self {
-            // Ptr(ptr.as_ptr())
-            Ptr(ptr)
-        }
-        pub fn free_and_into_element(&mut self) -> T {
-            ArchMem::type_free(self.0)
-        }
-    }
-    impl<T> Copy for Ptr<T> {}
-
-    impl<T> Clone for Ptr<T> {
-        fn clone(&self) -> Self {
-            Ptr(self.0)
-        }
-    }
-
-    impl<T> Ptr<T> {
-        pub fn as_ptr(&self) -> *mut T {
-            self.0.as_ptr()
-        }
-    }
-
-    impl<T> Deref for Ptr<T> {
-        type Target = T;
-
-        #[inline]
-        fn deref(&self) -> &Self::Target {
-            // unsafe { &*self.0 }
-            unsafe { self.0.as_ref() }
-        }
-    }
-
-    impl<T> DerefMut for Ptr<T> {
-        #[inline]
-        fn deref_mut(&mut self) -> &mut Self::Target {
-            // unsafe { &mut *self.0 }
-            unsafe { self.0.as_mut() }
-        }
+        self.tail = None;
+        self.len = 0;
     }
 }
 
-pub mod link_node {
-
-    use super::ptr::Ptr;
-    use core::clone::Clone;
-    use core::marker::Copy;
-    use core::ops::Deref;
-    use core::ptr::NonNull;
-
-    use core::option::Option;
-    use core::option::Option::*;
-
-    pub type ElementPtr<T> = Ptr<T>;
-    pub type NodePtr<T> = Ptr<LinkNode<T>>;
-    pub type ListPtr<T> = Ptr<LinkList<T>>;
-
-    #[derive(Clone, PartialEq, Eq)]
-    pub struct LinkNode<T> {
-        pub data: Option<ElementPtr<T>>,
-        pub next: Option<NodePtr<T>>,
-        pub prev: Option<NodePtr<T>>,
-        pub list_handle: Option<ListPtr<T>>,
-    }
-
-    // impl<T> Copy for LinkNode<T> {}
-
-    impl<T> Drop for LinkList<T> {
-        fn drop(&mut self) {
-            while let Some(mut node) = self.head.take() {
-                let next = node.next.take();
-
-                // 释放节点和数据
-                node.data.as_mut().map(|data| data.free_and_into_element());
-
-                node.free_and_into_element();
-
-                self.head = next;
-            }
-            self.tail = None;
-            self.len = 0;
+impl<T> LinkNode<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            next: None,
+            prev: None,
+            data: Some(ElementPtr::new(data)),
+            list_handle: None,
         }
     }
-
-    impl<T> LinkNode<T> {
-        pub fn new(data: T) -> Self {
-            Self {
-                next: None,
-                prev: None,
-                data: Some(ElementPtr::new(data)),
-                list_handle: None,
-            }
-        }
-        fn next(&mut self) -> Option<NodePtr<T>> {
-            self.next
-        }
-
-        fn prev(&mut self) -> Option<NodePtr<T>> {
-            self.prev
-        }
-
-        fn set_next(&mut self, next: Option<NodePtr<T>>) {
-            self.next = next;
-        }
-
-        fn set_prev(&mut self, prev: Option<NodePtr<T>>) {
-            self.prev = prev;
-        }
-
-        // fn set_element(&mut self, data: Option<ElementPtr<T>>) {
-        //     self.data = data;
-        // }
-
-        // fn into_element(&self) -> Option<ElementPtr<T>> {
-        //     self.data
-        // }
-
-        fn get_list(&self) -> Option<ListPtr<T>> {
-            self.list_handle
-        }
-
-        fn insert(&mut self, mut node: NodePtr<T>) {
-            node.prev = self.prev;
-
-            node.next = self.next;
-
-            self.prev = Some(node);
-        }
-
-        fn del(&mut self) {
-            if let Some(mut next) = self.next {
-                next.prev = self.prev;
-            }
-            if let Some(mut prev) = self.prev {
-                prev.next = self.next;
-            }
-            self.next = None;
-            self.prev = None;
-        }
-
-        pub fn is_null(&self) -> bool {
-            self.data.is_none()
-        }
-    }
-    #[derive(Clone, PartialEq, Eq)]
-    pub struct LinkList<T> {
-        pub tail: Option<NodePtr<T>>,
-        pub head: Option<NodePtr<T>>,
-        len: usize,
+    fn next(&mut self) -> Option<NodePtr<T>> {
+        self.next
     }
 
-    // impl<T: Copy> Copy for LinkList<T> where T: Copy {}
+    fn prev(&mut self) -> Option<NodePtr<T>> {
+        self.prev
+    }
 
-    impl<T> LinkList<T> {
-        pub const fn new() -> LinkList<T> {
-            Self {
-                head: None,
-                tail: None,
-                len: 0,
+    fn set_next(&mut self, next: Option<NodePtr<T>>) {
+        self.next = next;
+    }
+
+    fn set_prev(&mut self, prev: Option<NodePtr<T>>) {
+        self.prev = prev;
+    }
+
+    // fn set_element(&mut self, data: Option<ElementPtr<T>>) {
+    //     self.data = data;
+    // }
+
+    // fn into_element(&self) -> Option<ElementPtr<T>> {
+    //     self.data
+    // }
+
+    fn get_list(&self) -> Option<ListPtr<T>> {
+        self.list_handle
+    }
+
+    fn insert(&mut self, mut node: NodePtr<T>) {
+        node.prev = self.prev;
+
+        node.next = self.next;
+
+        self.prev = Some(node);
+    }
+
+    fn del(&mut self) {
+        if let Some(mut next) = self.next {
+            next.prev = self.prev;
+        }
+        if let Some(mut prev) = self.prev {
+            prev.next = self.next;
+        }
+        self.next = None;
+        self.prev = None;
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.data.is_none()
+    }
+}
+#[derive(Clone, PartialEq, Eq)]
+pub struct LinkList<T> {
+    pub tail: Option<NodePtr<T>>,
+    pub head: Option<NodePtr<T>>,
+    len: usize,
+}
+
+// impl<T: Copy> Copy for LinkList<T> where T: Copy {}
+
+impl<T> LinkList<T> {
+    pub const fn new() -> LinkList<T> {
+        Self {
+            head: None,
+            tail: None,
+            len: 0,
+        }
+    }
+    #[inline]
+    pub fn push_back(&mut self, data: T) -> NodePtr<T> {
+        let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
+        let new_node = NodePtr::new(LinkNode {
+            data: Some(ElementPtr::new(data)),
+            next: None,
+            prev: self.tail,
+            list_handle: Some(ListPtr::from_non_null(self_ptr)),
+        });
+
+        match self.tail.take() {
+            Some(mut old_tail) => {
+                old_tail.next = Some(new_node);
+                self.tail = Some(new_node);
+            }
+            None => {
+                self.head = Some(new_node);
+                self.tail = Some(new_node);
             }
         }
-        #[inline]
-        pub fn push_back(&mut self, data: T) -> NodePtr<T> {
-            let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
-            let new_node = NodePtr::new(LinkNode {
-                data: Some(ElementPtr::new(data)),
-                next: None,
-                prev: self.tail,
-                list_handle: Some(ListPtr::from_non_null(self_ptr)),
-            });
+        self.len += 1;
+        new_node
+    }
+    #[inline]
+    pub fn push_front(&mut self, data: T) -> NodePtr<T> {
+        let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
+        let new_node = NodePtr::new(LinkNode {
+            data: Some(ElementPtr::new(data)),
+            next: self.head,
+            prev: None,
+            list_handle: Some(ListPtr::from_non_null(self_ptr)),
+        });
 
-            match self.tail.take() {
-                Some(mut old_tail) => {
-                    old_tail.next = Some(new_node);
-                    self.tail = Some(new_node);
-                }
-                None => {
-                    self.head = Some(new_node);
-                    self.tail = Some(new_node);
-                }
+        match self.head.take() {
+            Some(mut old_head) => {
+                old_head.prev = Some(new_node);
+                self.head = Some(new_node);
             }
-            self.len += 1;
-            new_node
-        }
-        #[inline]
-        pub fn push_front(&mut self, data: T) -> NodePtr<T> {
-            let self_ptr = unsafe { NonNull::new_unchecked(self as *mut Self) };
-            let new_node = NodePtr::new(LinkNode {
-                data: Some(ElementPtr::new(data)),
-                next: self.head,
-                prev: None,
-                list_handle: Some(ListPtr::from_non_null(self_ptr)),
-            });
-
-            match self.head.take() {
-                Some(mut old_head) => {
-                    old_head.prev = Some(new_node);
-                    self.head = Some(new_node);
-                }
-                None => {
-                    self.head = Some(new_node);
-                    self.tail = Some(new_node);
-                }
+            None => {
+                self.head = Some(new_node);
+                self.tail = Some(new_node);
             }
-            self.len += 1;
-            new_node
         }
-        #[inline]
-        pub fn pop_front(&mut self) -> Option<T> {
-            self.head.take().map(|mut node| {
-                self.len -= 1;
-
-                if let Some(mut new_head) = node.next {
-                    new_head.prev = None;
-                    self.head = Some(new_head);
-                } else {
-                    self.tail = None;
-                }
-                let data = node.data.unwrap().free_and_into_element();
-                node.free_and_into_element();
-                data
-            })
-        }
-        #[inline]
-        pub fn pop_back(&mut self) -> Option<T> {
-            self.tail.take().map(|mut node| {
-                self.len -= 1;
-
-                if let Some(mut new_tail) = node.prev {
-                    new_tail.next = None;
-                    self.tail = Some(new_tail);
-                } else {
-                    self.head = None;
-                }
-                let data = node.data.unwrap().free_and_into_element();
-                node.free_and_into_element();
-                data
-            })
-        }
-
-        pub fn front(&self) -> Option<&T> {
-            self.head.as_deref().and_then(|node| node.data.as_deref())
-        }
-
-        pub fn back(&self) -> Option<&T> {
-            self.tail.as_deref().and_then(|node| node.data.as_deref())
-        }
-
-        pub fn detach(&mut self, mut node: NodePtr<T>) -> NodePtr<T> {
-            if let Some(mut prev) = node.prev {
-                prev.next = node.next;
-            } else {
-                self.head = node.next;
-            }
-
-            if let Some(mut next) = node.next {
-                next.prev = node.prev;
-            } else {
-                self.tail = node.prev;
-            }
-
+        self.len += 1;
+        new_node
+    }
+    #[inline]
+    pub fn pop_front(&mut self) -> Option<T> {
+        self.head.take().map(|mut node| {
             self.len -= 1;
 
-            // 重置节点的前后指针
-            node.prev = None;
-            node.next = None;
-
-            node
-        }
-
-        // 将已存在的节点添加到列表末尾
-        pub fn attach_back(&mut self, mut node: NodePtr<T>) {
-            node.prev = self.tail;
-            node.next = None;
-
-            if let Some(mut tail) = self.tail {
-                tail.next = Some(node);
+            if let Some(mut new_head) = node.next {
+                new_head.prev = None;
+                self.head = Some(new_head);
             } else {
-                self.head = Some(node);
+                self.tail = None;
             }
+            let data = node.data.unwrap().free_and_into_element();
+            node.free_and_into_element();
+            data
+        })
+    }
+    #[inline]
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.tail.take().map(|mut node| {
+            self.len -= 1;
 
-            self.tail = Some(node);
-            self.len += 1;
-        }
-
-        pub fn len(&self) -> usize {
-            self.len
-        }
-
-        pub fn is_empty(&self) -> bool {
-            if self.len == 0 {
-                return true;
+            if let Some(mut new_tail) = node.prev {
+                new_tail.next = None;
+                self.tail = Some(new_tail);
             } else {
-                return false;
+                self.head = None;
             }
+            let data = node.data.unwrap().free_and_into_element();
+            node.free_and_into_element();
+            data
+        })
+    }
+
+    pub fn front(&self) -> Option<&T> {
+        self.head.as_deref().and_then(|node| node.data.as_deref())
+    }
+
+    pub fn back(&self) -> Option<&T> {
+        self.tail.as_deref().and_then(|node| node.data.as_deref())
+    }
+
+    pub fn detach(&mut self, mut node: NodePtr<T>) -> NodePtr<T> {
+        if let Some(mut prev) = node.prev {
+            prev.next = node.next;
+        } else {
+            self.head = node.next;
         }
 
-        pub fn iter(&self) -> ElementIter<T> {
-            ElementIter { next: self.head }
+        if let Some(mut next) = node.next {
+            next.prev = node.prev;
+        } else {
+            self.tail = node.prev;
         }
 
-        pub fn iter_nodes(&self) -> NodeIter<T> {
-            NodeIter { next: self.head }
+        self.len -= 1;
+
+        // 重置节点的前后指针
+        node.prev = None;
+        node.next = None;
+
+        node
+    }
+
+    // 将已存在的节点添加到列表末尾
+    pub fn attach_back(&mut self, mut node: NodePtr<T>) {
+        node.prev = self.tail;
+        node.next = None;
+
+        if let Some(mut tail) = self.tail {
+            tail.next = Some(node);
+        } else {
+            self.head = Some(node);
+        }
+
+        self.tail = Some(node);
+        self.len += 1;
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        if self.len == 0 {
+            return true;
+        } else {
+            return false;
         }
     }
 
-    pub struct NodeIter<T> {
-        next: Option<NodePtr<T>>,
+    pub fn iter(&self) -> ElementIter<T> {
+        ElementIter { next: self.head }
     }
 
-    pub struct ElementIter<T> {
-        next: Option<NodePtr<T>>,
-    }
-
-    impl<T> Iterator for ElementIter<T> {
-        type Item = ElementPtr<T>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            self.next.and_then(|node| unsafe {
-                self.next = node.next;
-                Some(node.data.unwrap())
-            })
-        }
-    }
-
-    impl<T> Iterator for NodeIter<T> {
-        type Item = NodePtr<T>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            self.next.and_then(|node| {
-                self.next = node.next;
-                Some(node)
-            })
-        }
-    }
-
-    pub trait Linkable: Sized {
-        fn get_node_ptr(&self) -> Option<NodePtr<Self>>;
-        fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>);
+    pub fn iter_nodes(&self) -> NodeIter<T> {
+        NodeIter { next: self.head }
     }
 }
 
-pub mod marco {
+pub struct NodeIter<T> {
+    next: Option<NodePtr<T>>,
+}
 
-    use super::link_node::*;
+pub struct ElementIter<T> {
+    next: Option<NodePtr<T>>,
+}
 
-    #[macro_export]
-    macro_rules! linkable {
-        ($name:ident) => {
-            impl Linkable for $name {
-                fn get_node_ptr(&self) -> Option<NodePtr<Self>> {
-                    self.node_ptr
-                }
+impl<T> Iterator for ElementIter<T> {
+    type Item = ElementPtr<T>;
 
-                fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>) {
-                    self.node_ptr = ptr;
-                }
-            }
-        };
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.and_then(|node| unsafe {
+            self.next = node.next;
+            Some(node.data.unwrap())
+        })
     }
+}
+
+impl<T> Iterator for NodeIter<T> {
+    type Item = NodePtr<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.and_then(|node| {
+            self.next = node.next;
+            Some(node)
+        })
+    }
+}
+
+pub trait Linkable: Sized {
+    fn get_node_ptr(&self) -> Option<NodePtr<Self>>;
+    fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>);
+}
+
+#[macro_export]
+macro_rules! linkable {
+    ($name:ident) => {
+        impl Linkable for $name {
+            fn get_node_ptr(&self) -> Option<NodePtr<Self>> {
+                self.node_ptr
+            }
+
+            fn set_node_ptr(&mut self, ptr: Option<NodePtr<Self>>) {
+                self.node_ptr = ptr;
+            }
+        }
+    };
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
