@@ -1,11 +1,11 @@
 use crate::kernel::scheduler::with_scheduler;
 use core::arch::global_asm;
 
-pub fn deal_syscall_exit() {}
+pub(crate) fn deal_syscall_exit() {}
 
-pub fn deal_syscall_yield() {}
+pub(crate) fn deal_syscall_yield() {}
 
-pub fn deal_syscall_sleep(time: usize) {
+pub(crate) fn deal_syscall_sleep(time: usize) {
     with_scheduler(|s| s.delay_task(time));
 }
 

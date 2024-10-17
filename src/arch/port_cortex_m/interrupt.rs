@@ -4,13 +4,11 @@ use crate::kernel_println;
 
 use core::arch::global_asm;
 use cortex_m_rt::exception;
-
+use cortex_m_rt::ExceptionFrame;
 #[exception]
 unsafe fn SysTick() {
     scheduler::with_scheduler(|s| s.tick());
 }
-
-use cortex_m_rt::ExceptionFrame;
 
 #[exception]
 unsafe fn HardFault(ef: &ExceptionFrame) -> ! {

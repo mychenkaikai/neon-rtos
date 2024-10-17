@@ -7,7 +7,7 @@ use alloc::alloc::*;
 use core::mem::size_of;
 use core::ptr::NonNull;
 
-pub struct ArchMem;
+pub(crate) struct ArchMem;
 
 impl MemOperations for ArchMem {
     fn type_malloc<T>(data: T) -> NonNull<T> {

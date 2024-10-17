@@ -1,8 +1,7 @@
 extern "C" {
-    pub fn call_task_exit();
-    pub fn call_task_yield();
-    pub fn call_task_sleep(time: usize);
-    pub fn call_task_create(name: &'static str, stack_size: usize, entry: fn(usize));
+    pub(crate) fn call_task_exit();
+    pub(crate) fn call_task_yield();
+    pub(crate) fn call_task_sleep(time: usize);
 }
 
 pub fn task_exit() {

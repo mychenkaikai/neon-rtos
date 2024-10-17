@@ -1,7 +1,7 @@
-pub mod interrupt;
-pub mod mem;
-pub mod start;
-pub mod syscall;
+pub(crate) mod interrupt;
+pub(crate) mod mem;
+pub(crate) mod start;
+pub(crate) mod syscall;
 
 use crate::kernel::scheduler::with_scheduler;
 use crate::{arch::common::*, kernel::scheduler};
@@ -12,7 +12,7 @@ use cortex_m::{self, register::psp};
 
 use crate::kernel_println;
 
-pub struct ArchPort;
+pub(crate) struct ArchPort;
 
 impl ArchPortTrait for ArchPort {
     #[inline]

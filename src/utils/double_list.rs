@@ -1,10 +1,3 @@
-// use core::ptr::NonNull;
-// use link_node::LinkNode;
-// use link_node::NodePtr;
-// type ElementType = usize;
-// type NodeType = NodePtr<ElementType>;
-// type ListType = ();
-
 use crate::utils::ptr::Ptr;
 use core::clone::Clone;
 
