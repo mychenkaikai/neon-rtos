@@ -1,1 +1,0 @@
-cargo build --target thumbv7m-none-eabi --features cortex_m3 --lib --example basic
