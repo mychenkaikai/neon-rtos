@@ -1,7 +1,11 @@
+use crate::signal::SignalType;
+
 extern "C" {
     pub(crate) fn call_task_exit();
     pub(crate) fn call_task_yield();
     pub(crate) fn call_task_sleep(time: usize);
+    pub(crate) fn call_task_wait_signal(signal: usize);
+    pub(crate) fn call_task_send_signal(signal: usize);
 }
 
 pub fn task_exit() {
@@ -22,4 +26,14 @@ pub fn task_sleep(time: usize) {
     }
 }
 
+pub fn task_wait_signal(signal: SignalType) {
+    unsafe {
+        call_task_wait_signal(signal.into());
+    }
+}
 
+pub fn task_send_signal(signal: SignalType) {
+    unsafe {
+        call_task_send_signal(signal.into());
+    }
+}

@@ -1,4 +1,3 @@
-
 use crate::arch::common::ArchPortTrait;
 use crate::arch::common::MemOperations;
 
@@ -153,23 +152,20 @@ impl Scheduler {
     }
 
     pub fn delay_task(&mut self, ms: usize) {
-        // assert!(!ArchPort::in_interrupt());
         if let Some(mut current) = self.current_task {
             let ticks = (ms * self.ticks_per_second) / 1000;
             let unblock_time = self.ticks_count + ticks;
             current.set_unblock_time(Some(unblock_time));
-
+            
+            // 使用定时器信号作为阻塞原因
+            current.state = TaskState::Blocked(BlockReason::Signal(SignalType::Timer));
+            
             if let Some(node) = current.get_node_ptr() {
-                // 从就绪列表中分离节点
                 self.task_ready_list.detach(node);
-
-                // 将分离的节点添加到延迟列表
                 self.task_delay_list.attach_back(node);
-
                 self.update_next_delay_task_unblock_time();
             }
         }
-
         ArchPort::call_task_yield();
     }
 
@@ -234,8 +230,50 @@ impl Scheduler {
             .filter_map(|tcb| tcb.unblock_time())
             .min();
     }
-}
+    pub fn block_task_with_signal(&mut self, signal: SignalType) {
+        if let Some(mut current) = self.current_task {
+            current.state = TaskState::Blocked(BlockReason::Signal(signal));
+            current.waiting_signals.push(signal);
 
+            if let Some(node) = current.get_node_ptr() {
+                self.task_ready_list.detach(node);
+                self.task_delay_list.attach_back(node);
+            }
+        }
+        ArchPort::call_task_yield();
+    }
+
+    pub fn send_signal(&mut self, signal: SignalType) {
+        let mut tasks_to_unblock = Vec::new();
+        
+        for mut node in self.task_delay_list.iter_nodes() {
+            if let Some(task) = node.data.as_mut() {
+                if task.waiting_signals.contains(&signal) {
+                    tasks_to_unblock.push(node);
+                }
+            }
+        }
+
+        for node in tasks_to_unblock {
+            self.task_delay_list.detach(node);
+            if let Some(mut task) = node.data {
+                task.state = TaskState::Ready;
+                task.waiting_signals.retain(|s| *s != signal);
+            }
+            self.task_ready_list.attach_back(node);
+        }
+    }
+
+}
+use crate::signal::*;
+extern crate alloc;
+use alloc::vec::Vec;
+#[derive(PartialEq)]
+enum TaskState {
+    Ready,
+    Running,
+    Blocked(BlockReason),
+}
 // #[derive(Debug)]
 #[repr(C)]
 pub struct TCB {
@@ -246,6 +284,9 @@ pub struct TCB {
     pub stack_size: usize,
     pub node_ptr: Option<NodePtr<Self>>,
     pub unblock_time: Option<usize>,
+    state: TaskState,
+    pending_signals: Vec<SignalType>, // 待处理的信号
+    waiting_signals: Vec<SignalType>, // 等待的信号
 }
 const STACK_CANARY: u32 = 0xDEADBEEF;
 impl TCB {
@@ -265,6 +306,9 @@ impl TCB {
             stack_size,
             node_ptr: None,
             unblock_time: None,
+            state: TaskState::Ready,
+            pending_signals: Vec::new(),
+            waiting_signals: Vec::new(),
         };
         kernel_println!("stack_top: {:x}", tcb.stack_top);
         kernel_println!("stack_addr: {:x}", tcb.stack_addr);

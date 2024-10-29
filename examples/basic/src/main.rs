@@ -11,6 +11,8 @@ use neon_rtos::syscall::*;
 use neon_rtos::task;
 use neon_rtos::utils::print;
 
+use neon_rtos::signal::SignalType;
+
 const SYST_FREQ: u32 = 100;
 const SYS_CLOCK: u32 = 12_000_000;
 // 定义 SysTick 的重新加载值
@@ -31,6 +33,13 @@ fn test1(_arg: usize) {
         // }
         // ArchPort::task_yield();
 
+        task_wait_signal(SignalType::UserDefined(2));
+        
+        // // 处理信号...
+        
+        // // 发送信号给其他任务
+        
+
         task_sleep(500);
     }
 }
@@ -44,6 +53,8 @@ fn test2(_arg: usize) {
         // ArchPort::task_yield();
 
         task_sleep(1000);
+
+        task_send_signal(SignalType::UserDefined(2));
     }
 }
 
