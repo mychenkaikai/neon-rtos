@@ -1,0 +1,11 @@
+[package]
+name = "neon-rtos-example-basic"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+neon-rtos = { path = "../.." ,features = ["riscv"]}
+semihosting = { version = "0.1.16", features = ["stdio"] }
+riscv = "0.11.1"
+

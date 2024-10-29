@@ -1,5 +1,5 @@
-use crate::arch::port_cortex_m::syscall::*;
-use crate::kernel::scheduler;
+use super::syscall::*;
+use crate::scheduler;
 use crate::kernel_println;
 
 use core::arch::global_asm;

@@ -8,7 +8,6 @@ use crate::{arch::common::*, scheduler};
 
 use core::arch::asm;
 use core::mem::size_of;
-use cortex_m::{self, register::psp};
 
 use crate::kernel_println;
 
@@ -16,62 +15,31 @@ pub(crate) struct ArchPort;
 
 impl ArchPortTrait for ArchPort {
     #[inline]
-    fn idle_task() {
-        cortex_m::asm::wfi();
-    }
+    fn idle_task() {}
     fn enable_interrupts() {
-        unsafe {
-            cortex_m::interrupt::enable();
-        }
+        unsafe {}
     }
-    fn disable_interrupts() {
-        cortex_m::interrupt::disable();
-    }
+    fn disable_interrupts() {}
     fn is_interrupts_enabled() -> bool {
         true
     }
-    fn enter_critical_section() {
-        cortex_m::interrupt::disable();
-    }
+    fn enter_critical_section() {}
     fn exit_critical_section() {
-        unsafe {
-            cortex_m::interrupt::enable();
-        }
+        unsafe {}
     }
     #[inline]
-    fn critical_section<F: FnOnce()>(func: F) {
-        cortex_m::interrupt::free(|_| {
-            func();
-        });
-    }
+    fn critical_section<F: FnOnce()>(func: F) {}
 
     fn delay_ms(ms: u32) {}
     fn memory_barrier() { /* 实现 */
     }
 
     fn start_first_task() {
-        unsafe {
-            asm!(
-                "ldr r0, =0xE000ED08",
-                "ldr r0, [r0]",
-                "ldr r0, [r0]",
-                "msr msp, r0",
-                "cpsie i",
-                "cpsie f",
-                "dsb",
-                "isb",
-                // "svc 0",
-            );
-        }
         ArchPort::call_task_yield();
     }
 
     #[inline]
-    fn call_task_yield() {
-        cortex_m::peripheral::SCB::set_pendsv();
-        cortex_m::asm::dsb();
-        cortex_m::asm::isb();
-    }
+    fn call_task_yield() {}
 
     fn init_task_stack(top_of_stack: &mut usize, func: fn(usize), p_args: usize) {
         unsafe {
@@ -115,11 +83,9 @@ pub fn get_current_task_stack_top() -> *mut u32 {
 }
 
 pub fn set_psp(psp: usize) {
-    unsafe {
-        psp::write(psp as u32);
-    }
+    unsafe {}
 }
 
 pub fn get_psp() -> usize {
-    psp::read() as usize
+    0
 }

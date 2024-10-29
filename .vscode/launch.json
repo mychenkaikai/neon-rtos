@@ -17,7 +17,32 @@
 			"executable": "./target/thumbv7m-none-eabi/debug/neon-rtos-example-basic",
 			"cpu": "cortex-m3",
 			"machine": "lm3s6965evb",
-			"debuggerArgs": ["-ex", "addr=0x00000000"],
+			"debuggerArgs": [
+				"-ex",
+				"addr=0x00000000"
+			],
+		},
+		{
+			"type": "probe-rs-debug",
+			"request": "launch",
+			"name": "RISC-V Debug",
+			"cwd": "${workspaceFolder}/examples/riscv",
+			"chip": "riscv32", // 或者具体的芯片型号
+			"preLaunchTask": "RISC-V Build (debug)",
+			"flashingConfig": {
+				"flashingEnabled": true,
+				"haltAfterReset": true,
+			},
+			"coreConfigs": [
+				{
+					"programBinary": "target/riscv32imac-unknown-none-elf/debug/neon-rtos-example-basic",
+					"rttEnabled": true
+				}
+			],
+			"env": {
+				"RUST_LOG": "info"
+			},
+			"consoleLogLevel": "Info"
 		}
 	]
 }

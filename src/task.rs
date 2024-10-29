@@ -1,4 +1,4 @@
-use crate::kernel::scheduler::with_scheduler;
+use crate::scheduler::with_scheduler;
 
 pub fn create_task(
     name: &'static str,

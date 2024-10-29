@@ -3,7 +3,7 @@
 
 pub mod utils;
 
-pub mod kernel;
+pub mod scheduler;
 
 pub mod arch;
 

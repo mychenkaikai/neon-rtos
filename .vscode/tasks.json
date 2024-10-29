@@ -10,6 +10,9 @@
                 "--target",
                 "thumbv7m-none-eabi",
             ],
+            "options": {
+                "cwd": "${workspaceFolder}/examples/basic"
+            },
             "problemMatcher": [
                 "$rustc"
             ],
@@ -18,5 +21,23 @@
                 "isDefault": true
             }
         },
+        {
+            "label": "RISC-V Build (debug)",
+            "type": "process",
+            "command": "cargo",
+            "args": [
+                "build",
+                "--target",
+                "riscv32imac-unknown-none-elf"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/examples/riscv"
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build"
+        }
+        
     ]
 }
