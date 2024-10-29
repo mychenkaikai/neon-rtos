@@ -11,12 +11,12 @@ use crate::utils::double_list::ElementPtr;
 use crate::utils::double_list::NodePtr;
 use crate::utils::double_list::*;
 
+use crate::signal::SignalManager;
 use core::ops::FnOnce;
 use core::option::Option;
 use core::option::Option::*;
 use core::result::Result;
 use core::result::Result::*;
-
 pub struct Scheduler {
     task_ready_list: LinkList<TCB>,
     task_delay_list: LinkList<TCB>,
@@ -25,6 +25,7 @@ pub struct Scheduler {
     next_delay_task_unblock_time: Option<usize>,
     ticks_count: usize,
     ticks_per_second: usize,
+    signal_manager: SignalManager,
 }
 
 impl Scheduler {
@@ -37,6 +38,7 @@ impl Scheduler {
             next_delay_task_unblock_time: None,
             ticks_count: 0,
             ticks_per_second: 100,
+            signal_manager: SignalManager::new(),
         }
     }
 
@@ -156,10 +158,10 @@ impl Scheduler {
             let ticks = (ms * self.ticks_per_second) / 1000;
             let unblock_time = self.ticks_count + ticks;
             current.set_unblock_time(Some(unblock_time));
-            
+
             // 使用定时器信号作为阻塞原因
             current.state = TaskState::Blocked(BlockReason::Signal(SignalType::Timer));
-            
+
             if let Some(node) = current.get_node_ptr() {
                 self.task_ready_list.detach(node);
                 self.task_delay_list.attach_back(node);
@@ -233,37 +235,24 @@ impl Scheduler {
     pub fn block_task_with_signal(&mut self, signal: SignalType) {
         if let Some(mut current) = self.current_task {
             current.state = TaskState::Blocked(BlockReason::Signal(signal));
-            current.waiting_signals.push(signal);
+            self.signal_manager.add_task_to_signal(signal, current);
 
             if let Some(node) = current.get_node_ptr() {
                 self.task_ready_list.detach(node);
-                self.task_delay_list.attach_back(node);
             }
         }
         ArchPort::call_task_yield();
     }
 
     pub fn send_signal(&mut self, signal: SignalType) {
-        let mut tasks_to_unblock = Vec::new();
-        
-        for mut node in self.task_delay_list.iter_nodes() {
-            if let Some(task) = node.data.as_mut() {
-                if task.waiting_signals.contains(&signal) {
-                    tasks_to_unblock.push(node);
-                }
+        let tasks = self.signal_manager.get_tasks_for_signal(signal);
+        for mut task in tasks {
+            task.state = TaskState::Ready;
+            if let Some(node) = task.get_node_ptr() {
+                self.task_ready_list.attach_back(node);
             }
-        }
-
-        for node in tasks_to_unblock {
-            self.task_delay_list.detach(node);
-            if let Some(mut task) = node.data {
-                task.state = TaskState::Ready;
-                task.waiting_signals.retain(|s| *s != signal);
-            }
-            self.task_ready_list.attach_back(node);
         }
     }
-
 }
 use crate::signal::*;
 extern crate alloc;
