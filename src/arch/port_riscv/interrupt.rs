@@ -1,5 +1,5 @@
-use crate::scheduler;
 use crate::kernel_println;
+use crate::scheduler;
 
 use core::arch::global_asm;
 

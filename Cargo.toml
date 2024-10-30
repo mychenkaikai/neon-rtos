@@ -19,7 +19,7 @@ exclude = [
 
 [features]
 default = ["riscv"]
-cortex_m3 = ["cortex-m", "cortex-m-rt", "alloc-cortex-m"]
+cortex_m3 = ["cortex-m", "cortex-m-rt", "alloc-cortex-m", "spin"]
 riscv = ["riscv-rt", "embedded-alloc"]
 
 [dependencies.cortex-m]
@@ -35,6 +35,9 @@ optional = true
 version = "0.4.4"
 optional = true
 
+[dependencies.spin]
+version = "0.9.8"
+optional = true
 
 [dependencies.riscv-rt]
 version = "0.12.2"

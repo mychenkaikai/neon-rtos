@@ -1,6 +1,6 @@
 use super::syscall::*;
-use crate::scheduler;
 use crate::kernel_println;
+use crate::scheduler;
 
 use core::arch::global_asm;
 use cortex_m_rt::exception;
@@ -28,6 +28,8 @@ fn syscall_handler(args1: usize, args2: usize, args3: usize, svc_num: usize) {
         2 => deal_syscall_sleep(args1 as usize),
         3 => deal_syscall_wait_signal(args1.into()),
         4 => deal_syscall_send_signal(args1.into()),
+        5 => deal_syscall_mutex_lock(args1),
+        6 => deal_syscall_mutex_unlock(args1),
         _ => panic!("syscall_handler: invalid svc_num: {}", svc_num),
     }
 }

@@ -12,3 +12,5 @@ pub mod task;
 pub mod syscall;
 
 pub mod signal;
+
+pub mod mutex;

@@ -11,6 +11,7 @@ use crate::utils::double_list::ElementPtr;
 use crate::utils::double_list::NodePtr;
 use crate::utils::double_list::*;
 
+use crate::mutex::MutexManager;
 use crate::signal::SignalManager;
 use core::ops::FnOnce;
 use core::option::Option;
@@ -18,14 +19,16 @@ use core::option::Option::*;
 use core::result::Result;
 use core::result::Result::*;
 pub struct Scheduler {
-    task_ready_list: LinkList<TCB>,
-    task_delay_list: LinkList<TCB>,
-    current_task: Option<ElementPtr<TCB>>,
-    idle_task: Option<ElementPtr<TCB>>,
+    pub(crate) task_ready_list: LinkList<TCB>,
+    pub(crate) task_delay_list: LinkList<TCB>,
+    pub(crate) current_task: Option<ElementPtr<TCB>>,
+    pub(crate) task_blocked_list: LinkList<TCB>,
+    pub(crate) idle_task: Option<ElementPtr<TCB>>,
     next_delay_task_unblock_time: Option<usize>,
     ticks_count: usize,
     ticks_per_second: usize,
     signal_manager: SignalManager,
+    pub(crate) mutex_manager: MutexManager,
 }
 
 impl Scheduler {
@@ -33,12 +36,14 @@ impl Scheduler {
         Scheduler {
             task_ready_list: LinkList::new(),
             task_delay_list: LinkList::new(),
+            task_blocked_list: LinkList::new(),
             current_task: None,
             idle_task: None,
             next_delay_task_unblock_time: None,
             ticks_count: 0,
             ticks_per_second: 100,
             signal_manager: SignalManager::new(),
+            mutex_manager: MutexManager::new(),
         }
     }
 
@@ -133,18 +138,60 @@ impl Scheduler {
     }
 
     pub fn task_switch_context(&mut self) {
-        if let Some(current) = self.current_task {
-            let next = if let Some(next_node) = current.get_node_ptr().and_then(|node| node.next) {
-                next_node.data
-            } else {
-                self.task_ready_list
-                    .front()
-                    .and_then(|tcb| tcb.get_node_ptr())
-                    .and_then(|node| node.data)
-            };
+        if let Some(mut current) = self.current_task {
+            // 1. 根据当前任务的状态，将其移动到对应列表
+            if let Some(node) = current.get_node_ptr() {
+                match current.state {
+                    TaskState::Ready => {
+                        // 如果任务仍处于就绪状态，保持在 ready_list
+                        // 如果不在 ready_list 中，重新加入
+                        // if !self.task_ready_list.contains(node) {
+                        //     self.task_ready_list.attach_back(node);
+                        // }
+                    }
+                    TaskState::Blocked(BlockReason::Signal(SignalType::Timer)) => {
+                        // 如果是延时阻塞，移到延时列表
+                        self.task_ready_list.detach(node);
+                        self.task_delay_list.attach_back(node);
+                        self.update_next_delay_task_unblock_time();
+                    }
+                    TaskState::Blocked(BlockReason::Mutex(_)) => {
+                        // 如果是互斥锁阻塞，移到阻塞列表
+                        self.task_ready_list.detach(node);
+                        self.task_blocked_list.attach_back(node);
+                    }
+                    TaskState::Blocked(BlockReason::Signal(_)) => {
+                        // 如果是信号阻塞，移到阻塞列表
+                        self.task_ready_list.detach(node);
+                        self.task_blocked_list.attach_back(node);
+                    }
+                    TaskState::Blocked(BlockReason::Delay(_)) => {
+                        // 如果是延时阻塞，移到延时列表
+                        self.task_ready_list.detach(node);
+                        self.task_delay_list.attach_back(node);
+                        self.update_next_delay_task_unblock_time();
+                    }
+                    TaskState::Running => {
+                        // 如果任务仍在运行，将其状态改为就绪
+                        current.state = TaskState::Ready;
+                    }
+                }
+            }
 
-            self.current_task = next.or(self.idle_task);
+            // 2. 从就绪列表中选择下一个任务
+            self.current_task = self
+                .task_ready_list
+                .front()
+                .and_then(|tcb| tcb.get_node_ptr())
+                .and_then(|node| node.data)
+                .or(self.idle_task);
 
+            // 3. 设置新任务的状态为运行
+            if let Some(mut next_task) = self.current_task {
+                next_task.state = TaskState::Running;
+            }
+
+            // 4. 检查栈溢出
             if let Some(tcb) = self.current_task {
                 if tcb.check_stack_overflow() {
                     panic!("Stack overflow detected in task: {:x}", tcb.stack_addr);
@@ -158,15 +205,8 @@ impl Scheduler {
             let ticks = (ms * self.ticks_per_second) / 1000;
             let unblock_time = self.ticks_count + ticks;
             current.set_unblock_time(Some(unblock_time));
-
-            // 使用定时器信号作为阻塞原因
+            // 只设置状态，实际的列表迁移在 task_switch_context 中完成
             current.state = TaskState::Blocked(BlockReason::Signal(SignalType::Timer));
-
-            if let Some(node) = current.get_node_ptr() {
-                self.task_ready_list.detach(node);
-                self.task_delay_list.attach_back(node);
-                self.update_next_delay_task_unblock_time();
-            }
         }
         ArchPort::call_task_yield();
     }
@@ -174,7 +214,7 @@ impl Scheduler {
     pub fn tick(&mut self) {
         ArchPort::enter_critical_section();
         self.increment_ticks_count();
-
+        // kernel_println!("Tick: {}", self.ticks_count);
         // 检查延迟任务
         if let Some(unblock_time) = self.next_delay_task_unblock_time {
             if self.ticks_count >= unblock_time {
@@ -206,6 +246,7 @@ impl Scheduler {
                     // 重置解除阻塞时间
                     if let Some(tcb) = node.data.as_mut() {
                         tcb.set_unblock_time(None);
+                        tcb.state = TaskState::Ready;
                     }
 
                     // 将节点添加到就绪列表
@@ -234,21 +275,20 @@ impl Scheduler {
     }
     pub fn block_task_with_signal(&mut self, signal: SignalType) {
         if let Some(mut current) = self.current_task {
+            // 只设置状态，实际的列表迁移在 task_switch_context 中完成
             current.state = TaskState::Blocked(BlockReason::Signal(signal));
             self.signal_manager.add_task_to_signal(signal, current);
-
-            if let Some(node) = current.get_node_ptr() {
-                self.task_ready_list.detach(node);
-            }
         }
         ArchPort::call_task_yield();
     }
 
     pub fn send_signal(&mut self, signal: SignalType) {
+        // 直接从信号管理器获取并唤醒所有等待该信号的任务
         let tasks = self.signal_manager.get_tasks_for_signal(signal);
         for mut task in tasks {
             task.state = TaskState::Ready;
             if let Some(node) = task.get_node_ptr() {
+                self.task_blocked_list.detach(node);
                 self.task_ready_list.attach_back(node);
             }
         }
@@ -258,7 +298,7 @@ use crate::signal::*;
 extern crate alloc;
 use alloc::vec::Vec;
 #[derive(PartialEq)]
-enum TaskState {
+pub(crate) enum TaskState {
     Ready,
     Running,
     Blocked(BlockReason),
@@ -267,15 +307,15 @@ enum TaskState {
 #[repr(C)]
 pub struct TCB {
     // 任务控制块的字段
-    pub stack_top: usize,
-    pub name: &'static str,
-    pub stack_addr: usize,
-    pub stack_size: usize,
-    pub node_ptr: Option<NodePtr<Self>>,
-    pub unblock_time: Option<usize>,
-    state: TaskState,
-    pending_signals: Vec<SignalType>, // 待处理的信号
-    waiting_signals: Vec<SignalType>, // 等待的信号
+    pub(crate) stack_top: usize,
+    pub(crate) name: &'static str,
+    pub(crate) stack_addr: usize,
+    pub(crate) stack_size: usize,
+    pub(crate) node_ptr: Option<NodePtr<Self>>,
+    pub(crate) unblock_time: Option<usize>,
+    pub(crate) state: TaskState,
+    pub(crate) pending_signals: Vec<SignalType>, // 待处理的信号
+    pub(crate) waiting_signals: Vec<SignalType>, // 等待的信号
 }
 const STACK_CANARY: u32 = 0xDEADBEEF;
 impl TCB {
