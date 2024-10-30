@@ -1,4 +1,4 @@
-use crate::signal::SignalType;
+use crate::kernel::sync::signal::SignalType;
 
 extern "C" {
     pub(crate) fn call_task_exit();

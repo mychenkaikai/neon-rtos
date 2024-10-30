@@ -3,14 +3,8 @@
 
 pub mod utils;
 
-pub mod scheduler;
-
 pub mod arch;
 
-pub mod task;
+pub mod kernel;
 
-pub mod syscall;
-
-pub mod signal;
-
-pub mod mutex;
+pub mod user_api;

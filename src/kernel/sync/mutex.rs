@@ -1,4 +1,4 @@
-use crate::scheduler::TCB;
+use crate::kernel::task::tcb::*;
 use crate::utils::ptr::Ptr;
 extern crate alloc;
 use alloc::vec::Vec;
@@ -26,11 +26,11 @@ impl Mutex {
     }
 
     pub fn lock(&self) {
-        crate::syscall::task_mutex_lock(self.inner.id);
+        crate::user_api::syscall::task_mutex_lock(self.inner.id);
     }
 
     pub fn unlock(&self) {
-        crate::syscall::task_mutex_unlock(self.inner.id);
+        crate::user_api::syscall::task_mutex_unlock(self.inner.id);
     }
 }
 

@@ -7,12 +7,12 @@ use cortex_m::peripheral::syst::SystClkSource;
 use cortex_m::Peripherals;
 use cortex_m_semihosting::hprintln;
 
-use neon_rtos::syscall::*;
-use neon_rtos::task;
+use neon_rtos::user_api::syscall::*;
+use neon_rtos::kernel::task::tcb::*;
 use neon_rtos::utils::print;
 
-use neon_rtos::mutex::Mutex;
-use neon_rtos::signal::SignalType;
+use neon_rtos::kernel::sync::mutex::Mutex;
+use neon_rtos::kernel::sync::signal::SignalType;
 
 
 const SYST_FREQ: u32 = 100;
@@ -64,8 +64,8 @@ fn test2(_arg: usize) {
 fn app_main() -> ! {
     print::register_print_function(|msg| hprintln!("{}", msg));
 
-    task::create_task("task1", 1024 * 2, test1).unwrap();
-    task::create_task("task2", 1024 * 2, test2).unwrap();
+    create_task("task1", 1024 * 2, test1).unwrap();
+    create_task("task2", 1024 * 2, test2).unwrap();
 
     let f = || {
         let p = Peripherals::take().unwrap();
@@ -77,5 +77,5 @@ fn app_main() -> ! {
         syst.enable_interrupt();
     };
 
-    task::start(f, SYST_FREQ as usize);
+    start(f, SYST_FREQ as usize);
 }

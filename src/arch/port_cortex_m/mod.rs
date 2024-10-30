@@ -3,8 +3,8 @@ pub(crate) mod mem;
 pub(crate) mod start;
 pub(crate) mod syscall;
 
-use crate::scheduler::with_scheduler;
-use crate::{arch::common::*, scheduler};
+use crate::kernel::scheduler::with_scheduler;
+use crate::{arch::common::*, kernel::scheduler};
 
 use core::arch::asm;
 use core::mem::size_of;

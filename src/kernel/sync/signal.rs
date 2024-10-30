@@ -1,13 +1,7 @@
-use crate::scheduler::TCB;
+use crate::kernel::task::tcb::TCB;
 extern crate alloc;
 use crate::utils::ptr::Ptr;
 use alloc::vec::Vec;
-#[derive(PartialEq)]
-pub enum BlockReason {
-    Delay(usize),       // 延时阻塞，参数为剩余tick数
-    Signal(SignalType), // 信号阻塞，等待特定信号
-    Mutex(usize),       // 互斥量阻塞
-}
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum SignalType {

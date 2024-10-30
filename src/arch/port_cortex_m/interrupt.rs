@@ -1,6 +1,6 @@
-use super::syscall::*;
+use crate::kernel::syscall::*;
+use crate::kernel::scheduler;
 use crate::kernel_println;
-use crate::scheduler;
 
 use core::arch::global_asm;
 use cortex_m_rt::exception;
