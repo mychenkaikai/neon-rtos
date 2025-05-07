@@ -1,6 +1,6 @@
 use crate::kernel::sync::signal::SignalType;
 
-extern "C" {
+unsafe extern "C" {
     pub(crate) fn call_task_exit();
     pub(crate) fn call_task_yield();
     pub(crate) fn call_task_sleep(time: usize);

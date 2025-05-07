@@ -2,7 +2,7 @@ use alloc_cortex_m::CortexMHeap;
 use cortex_m_rt::entry;
 use cortex_m_rt::heap_start;
 
-extern "C" {
+unsafe extern "C" {
     fn app_main() -> !;
 }
 // 全局分配器

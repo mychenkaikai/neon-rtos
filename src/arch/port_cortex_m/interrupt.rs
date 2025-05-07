@@ -20,7 +20,7 @@ unsafe fn DefaultHandler(_val: i16) -> ! {
     loop {}
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn syscall_handler(args1: usize, args2: usize, args3: usize, svc_num: usize) {
     match svc_num {
         0 => deal_syscall_exit(),

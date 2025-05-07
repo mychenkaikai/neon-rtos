@@ -94,12 +94,12 @@ fn task_exit_error() {
     loop {}
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub fn task_switch_context() {
     scheduler::with_scheduler(|s| s.task_switch_context());
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline]
 pub fn set_current_task_stack_top(psp: *mut u32) {
     with_scheduler(|s| {
@@ -108,7 +108,7 @@ pub fn set_current_task_stack_top(psp: *mut u32) {
         });
     });
 }
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[inline]
 pub fn get_current_task_stack_top() -> *mut u32 {
     with_scheduler(|s| s.current_task().map(|tcb| tcb.stack_top as *mut u32)).unwrap()

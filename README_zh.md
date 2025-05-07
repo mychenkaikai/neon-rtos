@@ -17,6 +17,8 @@ Neon RTOS 是一个支持多架构的轻量级实时操作系统，目前支持 
 ### 环境要求
 
 - Rust 工具链 (nightly)
+rustup target add thumbv7m-none-eabis
+rustup target add riscv32imac-unknown-none-elf
 - ARM GCC 工具链（用于 Cortex-M）或 RISC-V GCC（用于 RISC-V）
 - VSCode + Cortex-Debug 插件（用于调试）
 - QEMU（用于模拟运行）

@@ -21,6 +21,7 @@
 				"-ex",
 				"addr=0x00000000"
 			],
+			"gdbPath": "/opt/homebrew/bin/arm-none-eabi-gdb",
 		},
 		{
 			"type": "probe-rs-debug",
